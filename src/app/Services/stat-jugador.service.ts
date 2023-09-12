@@ -8,7 +8,7 @@ import { Response } from '../Models/response';
 })
 export class StatJugadorService {
 
-  url:string= "https://statsappapi.azurewebsites.net/StatJugador/"
+  url:string= ""
 
   constructor(private http:HttpClient) { }
 
