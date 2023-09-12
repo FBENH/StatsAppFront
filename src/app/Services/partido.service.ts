@@ -11,7 +11,7 @@ export class PartidoService {
 
   constructor(private http:HttpClient) { }
 
-  url:string= "https://statsappapi.azurewebsites.net/Partido/";
+  url:string= "";
 
   CrearPartido(partido:CrearPartido):Observable<Response>{
     return this.http.post<Response>(this.url+"Crear",partido).pipe(map(res=>{
