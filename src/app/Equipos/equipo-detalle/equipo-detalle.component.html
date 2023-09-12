@@ -1,0 +1,98 @@
+<div *ngIf="equipo" class="container">
+    <a class="back" routerLink="/menu"><i class="fa-solid fa-xmark fx"></i></a>
+    <h1 class="container_h1">Detalles de equipo</h1>
+    <div class="card">
+        <div class="card_img">
+            <img [src]="imageSrc || './assets/empty-logo.png'" alt="escudo">
+            <div class="img-icons" *ngIf="mod">
+                <span>Editar imágen: </span>
+                <label for="file"><i class="fa-solid fa-pencil pen"></i></label>
+                <i (click)="reset()" class="fa-solid fa-xmark xmark" ></i>
+            </div>
+            <input #seleccion id="file" type='file' (change)="readURL($event);" accept="image/*" />
+        </div>        
+        <div class="card_info" *ngIf="equipo && !mod">                           
+                <h3>{{this.equipoForm.get('nombre').value}}</h3>
+                <span>Ciudad: {{this.equipoForm.get('ciudad').value}}</span>
+                <span>Entrenador: {{this.equipoForm.get('entrenador').value}}</span>
+                <div class="editar" (click)="ActivarModificar()"><i class="fa-solid fa-pencil"></i> Editar información</div>   
+                <div class="btns">                    
+                    <button *ngIf="!mod" class="btnX X" (click)="Eliminar(equipo.id)" >Eliminar</button>
+                </div>                     
+        </div>
+        <div class="card_info" *ngIf="equipo && mod">
+            <form [formGroup]="equipoForm">
+                <ul>
+                    <li>Nombre: <input id="nombre" type="text" formControlName="nombre"></li>
+                    <li>Ciudad: <input id="ciudad" type="text" formControlName="ciudad"></li>
+                    <li>Entrenador: <input id="entrenador" type="text" formControlName="entrenador"></li>
+                </ul>                
+            </form>
+            <div class="btns">
+                <button [disabled]="!equipoForm.valid" *ngIf="mod" class="btnX check" (click)="Modificar()"><i class="fa-solid fa-check check"></i></button>
+                <button *ngIf="mod" class="btnX X" (click)="ActivarModificar()" ><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+    </div>
+    <h2 class="container_h2" >Jugadores</h2> 
+    <div class="jugadores_container" *ngIf="equipo.jugadores" >        
+        <div class="jugadores" *ngFor="let jugador of equipo.jugadores" (click)="VerDetallesJugador(jugador.id)">
+            <div class="jugadores_img"><img [src]="jugador.foto || './assets/Placeholder.webp'" alt="Foto de jugador"></div>
+            <div class="jugadores_info">
+                <span>{{jugador.nombre}}</span>
+                <span>Número: {{jugador.numero}}</span>
+            </div>   
+        </div>             
+    </div>
+    <h2 class="container_h2">Estadisticas</h2>
+    <div class="stats_container">                      
+                    <table class="stats-table">
+                        <thead>
+                          <tr>
+                            <th>Fecha</th>
+                            <th>Partido</th>                            
+                            <th>Pts</th>
+                            <th>Asis</th>
+                            <th>Reb</th>
+                            <th>OReb</th>
+                            <th>DReb</th>
+                            <th>TC%</th>
+                            <th>2pt</th>
+                            <th>3pt</th>
+                            <th>TL</th>
+                            <th>ROB</th>
+                            <th>TAP</th>
+                            <th>PER</th>
+                            <th>Resultado</th>
+                          </tr>
+                        </thead>
+                        <ng-container *ngIf="partidos">
+                        <ng-container *ngFor="let e of paginatedStats; let i='index'">                         
+                        <tbody>
+                          <tr class="tr" (click)="VerDetallesPartido(paginatedPartidos[i].id,paginatedPartidos[i].equipoVisitanteId,paginatedPartidos[i].equipoLocalId)">
+                            <td>{{FormatoFecha(paginatedPartidos[i].fecha)}}</td>
+                            <td>{{paginatedPartidos[i].local }} vs {{ paginatedPartidos[i].visitante }}</td>                            
+                            <td>{{ e.puntos }}</td>
+                            <td>{{ e.asistencias }}</td>
+                            <td>{{ e.rebotes }}</td>
+                            <td>{{ e.rebotesOfensivos }}</td>
+                            <td>{{ e.rebotesDefensivos }}</td>
+                            <td>{{ PorcentajeTC(e) }}</td>
+                            <td>{{ e.aciertos2Puntos }}/{{ e.intentos2Puntos }} ({{ PorcentajesTiros(e, '2pt') }}%)</td>
+                            <td>{{ e.aciertos3Puntos }}/{{ e.intentos3Puntos }} ({{ PorcentajesTiros(e, '3pt') }}%)</td>
+                            <td>{{ e.aciertos1Punto }}/{{ e.intentos1Punto }} ({{ PorcentajesTiros(e, '1pt') }}%)</td>
+                            <td>{{ e.robos }}</td>
+                            <td>{{ e.tapones }}</td>
+                            <td>{{ e.perdidas }}</td>
+                            <td>{{partidos[i].ganador === equipo.id? 'G':'P'}}</td>
+                          </tr>
+                        </tbody>
+                    </ng-container>
+                    </ng-container>                    
+                </table>               
+    </div>        
+</div>
+<ng-container *ngIf="equipo && equipo.estadisticasPartidos.lenght>12 ">
+    <mat-paginator [pageSize]="12" 
+      [length]="equipo.estadisticasPartidos.length" (page)="handlePageEvent($event)"> </mat-paginator>
+  </ng-container>

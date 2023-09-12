@@ -1,0 +1,30 @@
+<div class="container">
+<h3 class="container_h3">Crear equipo</h3>
+<div class="nuevo-equipo-form" [formGroup]="equipoForm">
+    <h3 class="container_h3">Nombre del equipo: </h3>
+    <input class="container_input" id="nombre" type="text" formControlName="nombre">
+    <div class="container_jugadores">
+        <ng-container formArrayName="jugadores">
+            <ng-container *ngFor="let jugadorForm of jugadores.controls; let i = index" formGroupName="{{ i }}" >
+                <div>
+                    <mat-form-field appearance="fill" [style.width.px]="50" [style.margin.px]="5" style="font-weight: bold;">                  
+                        <input matInput
+                            formControlName="numero"
+                            placeholder="N°"> 
+                                                                                         
+                    </mat-form-field>  
+                    <i class="fa-solid fa-xmark" (click)="DeleteJugador(i)"></i> 
+                </div>                              
+            </ng-container>
+        </ng-container>        
+    </div>
+    <div class="container_btns">
+        <button (click)="AddJugador()" >
+            Agregar Jugador
+        </button>
+        <button class="btnX" *ngIf="equipoForm.valid && jugadores.length>0" (click)="CrearEquipo()">
+            Confirmar equipo
+        </button>
+    </div>    
+</div>
+</div>

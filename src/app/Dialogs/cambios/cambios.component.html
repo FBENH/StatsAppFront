@@ -1,0 +1,23 @@
+
+<!-- <div class="container"> -->
+    <mat-dialog-content class="container">
+    <h3>Local</h3>
+    <div class="equipo_container">    
+        <div *ngFor="let jugador of jugadoresLocal" (click)="titularLocal(jugador)"
+            [ngClass]="{'jugador-seleccionado' : enTitulares(jugador)}" class="box">
+            <p>{{jugador.nombre}}</p>
+            <p>{{jugador.numero}}</p>
+        </div>
+    </div>
+    <h3>Visitante</h3>
+    <div class="equipo_container">    
+        <div *ngFor="let jugador of jugadoresVisitante" (click)="titularVisitante(jugador)"
+            [ngClass]="{'jugador-seleccionado' : enTitulares(jugador)}" class="box" >
+            <p>{{jugador.nombre}}</p>
+            <p>{{jugador.numero}}</p>
+        </div>
+    </div>
+    <button (click)="Iniciar()" class="btnX" >Confirmar titulares</button>
+</mat-dialog-content>
+<!-- </div> -->
+

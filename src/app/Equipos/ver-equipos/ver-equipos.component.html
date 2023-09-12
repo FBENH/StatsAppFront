@@ -1,0 +1,30 @@
+<div class="Container">
+    <div class="search__container">        
+        <input class="search__input" id="busqueda" type="text" [(ngModel)]="busqueda" (input)="Filtrar(busqueda)" placeholder="Buscar equipo" >
+        <div class="filter_container">
+          <span>Filtrar <i class="fa-solid fa-filter fi"></i></span> 
+          <div>
+            <select id="ciudadFiltro" [(ngModel)]="ciudadFiltro" (change)="Filtrar(busqueda)"  >
+              <option selected [ngValue]="null">Todos</option>
+              <ng-container *ngFor="let equipo of equipos">
+              <option *ngIf="equipo.ciudad" [ngValue]="equipo.ciudad">{{equipo.ciudad}}</option>
+              </ng-container>
+            </select>
+          </div>
+        </div> 
+        <div class="go-back"><a routerLink="/menu"><i class="fa-solid fa-xmark fx"></i></a></div> 
+    </div>  
+    <div class="Equipo_Container">
+        <div class="Equipo" (click)="VerDetalles(equipo.id)" *ngFor="let equipo of paginatedEquipos">
+            <h3 class="Equipo_h3">{{equipo.nombre}}</h3>
+            <div class="Equipo_img_container" >
+                <img class="Equipo_img_container_img" [src]=" equipo.escudo || './assets/empty-logo.png'  " alt="escudo">                
+            </div>
+            <p class="Equipo_p">{{equipo.ciudad}}</p>                       
+        </div>               
+    </div>    
+    <ng-container *ngIf="equiposFiltrados && equiposFiltrados.length>12">
+      <mat-paginator [pageSize]="12" 
+      [length]="equiposFiltrados.length" (page)="handlePageEvent($event)"> </mat-paginator>
+    </ng-container>      
+</div>

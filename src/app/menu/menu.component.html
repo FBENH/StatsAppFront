@@ -1,0 +1,46 @@
+<div class="menu">
+<header>
+    <div class="navbar">        
+            <div class="logo"><a routerLink="/menu">Stats app</a></div>
+        <ul class="links">           
+            <li><span (click)="CerrarSesion()">Cerrar sesión</span></li>
+            <li><a routerLink="/partidos" >Ver partidos</a></li>
+            <li><a routerLink="/crearEquipo">Crear equipo</a></li>
+            <li><a routerLink="/Equipos">Ver equipos</a></li>
+            <li><a routerLink="/crearJugador">Crear jugadores</a></li>
+            <li><a routerLink="/Jugadores">Ver jugadores</a></li>                      
+        </ul>
+        <span (click)="openDialog()" class="action_btn">Nuevo partido</span>
+                
+        
+        <div class="toggle_btn">
+            <i class="fa-solid" (click)="ToggleBtn()"
+            [ngClass]="{'fa-xmark': toggleBtn,'fa-bars':!toggleBtn}"></i>
+        </div>    
+</div>
+
+    <div class="dropdown_menu" [ngClass]="{'open': toggleBtn}">
+        <ul>
+            <li><span (click)="CerrarSesion()">Cerrar sesión</span></li>
+            <li><a routerLink="/partidos">Ver partidos</a></li>
+            <li><a routerLink="/crearEquipo">Crear equipo</a></li>
+            <li><a routerLink="/Equipos">Ver equipos</a></li>
+            <li><a routerLink="/crearJugador">Crear jugadores</a></li>
+            <li><a routerLink="/Jugadores">Ver jugadores</a></li>
+            <li><span (click)="openDialog()" class="action_btn">Nuevo partido</span></li>
+        </ul>
+    </div>
+</header>
+<main>    
+    <section id="hero">        
+        <iframe width="560" height="315" 
+        src="https://www.youtube.com/embed/njI5ibQ9ylA?si=DGrKjjZZ3yJhFxZY" 
+        title="YouTube video player" frameborder="0" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; 
+        web-share" allowfullscreen></iframe>          
+    </section>
+</main>
+</div>
+
+
+

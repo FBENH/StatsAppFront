@@ -1,0 +1,36 @@
+<div class="FormContainer">
+  <a class="back" routerLink="/menu"><i class="fa-solid fa-xmark fx"></i></a>
+  <div class="Form">
+    <h1 class="Form_h1">Crear Equipo</h1>
+    <form [formGroup]="equipoForm">
+      <div class="Form_item">        
+        <input autocomplete="off" type="text" id="nombre" formControlName="nombre" class="Form_item_input" placeholder="Nombre">          
+      </div>
+      <div class="Form_item">        
+        <input autocomplete="off" type="text" id="ciudad" formControlName="ciudad" class="Form_item_input" placeholder="Ciudad">        
+      </div>
+      <div class="Form_item">        
+        <input autocomplete="off" type="text" id="entrenador" formControlName="entrenador" class="Form_item_input" placeholder="Entrenador">        
+      </div>      
+      <div class="Form_item_load">        
+        <input id="file" #seleccion type='file' (change)="readURL($event);" accept="image/*" class="Form_item_input"/>
+        <div class="Load">
+          <span>Sube una foto: </span>
+            <label for="file">
+              <i class="fa-solid fa-camera"></i>        
+            </label>
+            <i class="fa-solid fa-xmark" (click)="reset()"></i>
+        </div>        
+        <div>
+          <img class="smallImg" [src]="imageSrc || './assets/empty-logo.png'" alt="Vista previa" />
+        </div>        
+      </div>
+      <button class="btnX" type="submit" [disabled]="!equipoForm.valid" (click)="CrearEquipo()">Crear Equipo</button>
+    </form>    
+  </div>
+  <div class="errores">
+    <small  *ngIf="equipoForm.controls.nombre.touched">{{NombreError(NombreControl)}}</small>
+    <small  *ngIf="equipoForm.controls.ciudad.touched">{{ControlError(CiudadControl,'Ciudad: ')}}</small>
+    <small  *ngIf="equipoForm.controls.ciudad.touched">{{ControlError(EntrenadorControl,'Entrenador: ')}}</small>    
+  </div>
+</div>

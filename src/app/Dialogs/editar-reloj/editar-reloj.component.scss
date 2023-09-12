@@ -1,0 +1,37 @@
+.container{
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+    &_tiempo{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+    & input{
+        width: 55px;
+        height: 30px;
+        font-size: 1.3rem;
+        text-align: center;
+    }   
+    }
+    
+}
+button{    
+    border: none;
+    outline: none;
+    text-align: center;
+    margin: auto;
+    padding: 5px;
+    border-radius: 10px;    
+    background-color: #413f9e;
+    color: #e8e8e8;
+    font-size: 1.3rem;   
+
+    &:hover{
+        cursor: pointer;
+        opacity: 0.8;
+    }
+}

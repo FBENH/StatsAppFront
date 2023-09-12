@@ -1,0 +1,42 @@
+<div *ngIf="!data">
+    <h1 mat-dialog-title>Modificar</h1>
+    <div mat-dialog-content>
+        <h3>¿Estás seguro de Modificar?</h3>
+    </div>
+    <div class="btns" mat-dialog-actions>
+    <button id="mod" class="btnX" [mat-dialog-close]="true">Modificar</button>
+    <button class="btnX" cdkFocusInitial [mat-dialog-close]="false">Cancelar</button>
+    </div>
+</div>
+<div *ngIf="data === 'Eliminar'">
+    <h1 mat-dialog-title>Eliminar</h1>
+    <div mat-dialog-content>
+        <h3>¿Estás seguro de Eliminar?</h3>
+    </div>
+    <div class="btns" mat-dialog-actions>
+    <button id="Del" class="btnX" [mat-dialog-close]="true">Eliminar</button>
+    <button class="btnX" cdkFocusInitial [mat-dialog-close]="false">Cancelar</button>
+    </div>
+</div>
+<div *ngIf="data ==='Finalizar'">
+    <h1 mat-dialog-title>Finalizar partido</h1>
+    <div mat-dialog-content>
+        <h3>¿Estás seguro de terminar el partido?</h3>
+        <p>Se guardaran todos los datos y estadisticas.</p>
+    </div>
+    <div class="btns" mat-dialog-actions>
+    <button id="Del" class="btnX" [mat-dialog-close]="true">Finalizar</button>
+    <button class="btnX" cdkFocusInitial [mat-dialog-close]="false">Cancelar</button>
+    </div>
+</div>
+<div *ngIf="data ==='Salir'">
+    <h1 mat-dialog-title>Salir del partido</h1>
+    <div mat-dialog-content>
+        <h3>¿Estás seguro de salir?</h3>
+        <p>Se perderán los datos que no hayan sido guardados.</p>
+    </div>
+    <div class="btns" mat-dialog-actions>
+    <button id="Del" class="btnX" [mat-dialog-close]="true">Salir</button>
+    <button class="btnX" cdkFocusInitial [mat-dialog-close]="false">Cancelar</button>
+    </div>
+</div>

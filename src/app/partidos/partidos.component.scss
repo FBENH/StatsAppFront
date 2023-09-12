@@ -1,0 +1,25 @@
+.container{
+    min-height: 100vh;
+    height: 100%;
+    background-color: #23242a;
+}
+
+.filter_container{
+    & input{
+        background-color: transparent;
+        color: #e8e8e8;
+        border: none;
+        outline: none;
+        font-size: 1rem;
+        &:hover{
+            cursor: pointer;
+            opacity: 0.8;
+        }
+    }
+    & select{
+        width: 70px;
+    }
+}
+::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}

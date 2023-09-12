@@ -1,0 +1,65 @@
+<div class="wrap">  
+  <a class="back" routerLink="/menu"><i class="fa-solid fa-xmark fx"></i></a>
+  <div class="container">    
+    <div class="card">
+      <div class="title">
+        <h1>Crear Jugador</h1>        
+      </div>
+      <div class="image">
+        <div class="outer">
+          <div class="inner">
+            <img [src]="imageSrc || './assets/Placeholder.webp'" alt="Vista previa">            
+          </div>
+        </div>
+      </div>
+      <div class="load">
+        <input #seleccion id="file" type='file' (change)="readURL($event);" accept="image/*" />
+        <span>Sube una foto: </span>
+            <label for="file">
+              <i class="fa-solid fa-camera"></i>        
+            </label>
+            <button (click)="reset()"><i class="fa-solid fa-xmark"></i></button>
+      </div>  
+        <form [formGroup]="jugadorForm">  
+          <div class="name">
+            <input autocomplete="off" type="text" id="nombre" formControlName="nombre" placeholder="Nombre">
+          </div>
+          <div class="details">
+            <div class="col">
+              <ul type="name">
+                
+                <li><input autocomplete="off" type="number" id="numero" formControlName="numero" placeholder="Número"></li>
+                <li>
+                  <select id="equipo" formControlName="equipoSelec" selected [ngClass]="{'selected' : this.jugadorForm.get('equipoSelec').value !== ''}" >
+                    <option [value]="''">Sin equipo</option>
+                    <option *ngFor="let equipo of equipos" [value]="equipo.id">{{equipo.nombre}}</option>
+                  </select></li>
+                <li>
+                  <select id="posicion" formControlName="posicion" [ngClass]="{'selected' : this.jugadorForm.get('posicion').value !== ''}">
+                    <option selected disabled [value]="''">Posición</option>
+                    <option value="Base">Base</option>
+                    <option value="Escolta">Escolta</option>
+                    <option value="Alero">Alero</option>
+                    <option value="Ala-Pivot">Ala-Pivot</option>
+                    <option value="Pivot">Pivot</option>
+                  </select>
+                </li>
+                <li style="display: flex;"><input id="altura" style="width: 50px;" autocomplete="off" type="number" id="altura" formControlName="altura" placeholder="Altura" min="0" max="250" >cm</li>
+                <li style="display: flex;"><input id="peso" style="width: 50px;" autocomplete="off" type="number" id="peso" formControlName="peso" placeholder="Peso" min="0" max="350" >kg</li>
+                      
+              </ul>
+            </div>            
+          </div>          
+      </form>             
+    </div>   
+  </div>
+  <div class="submit">
+    <button class="btnX" [disabled]="!jugadorForm.valid" (click)="CrearJugador()">Crear jugador</button>
+  </div>  
+  <div class="errores">
+    <small *ngIf="jugadorForm.controls.nombre.touched">{{NombreError(nombreControl)}}</small>
+    <small  *ngIf="jugadorForm.controls.altura.touched">{{ControlError(alturaControl)}}</small> 
+    <small  *ngIf="jugadorForm.controls.peso.touched">{{ControlError(pesoControl)}}</small>
+    <small  *ngIf="jugadorForm.controls.numero.touched">{{NumeroError(numeroControl)}}</small> 
+  </div>  
+</div>

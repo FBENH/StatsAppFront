@@ -1,0 +1,88 @@
+
+.FormContainer{
+    width: 100%;
+    height: 100%;
+    max-height:100vh ;
+    max-width: 100vw;    
+    
+    display: flex;
+    flex-direction: column;    
+    align-items: center;
+    background-color: #16213E;
+    
+
+    & .Form{
+        margin-top: 35px;
+        text-align: center;
+        color: #fff;
+        width: 400px;
+        border-radius: 15px;
+        background-color: #0F3460;
+        padding: 20px;
+        box-shadow: -1px 3px 23px 8px rgba(0,0,0,0.75);
+        -webkit-box-shadow: -1px 3px 23px 8px rgba(0,0,0,0.75);
+        -moz-box-shadow: -1px 3px 23px 8px rgba(0,0,0,0.75);
+        &_item{
+            padding: 10px;
+            display: flex;
+            justify-content: center;            
+            &_input{
+                margin-left: 2px;
+                text-align: center;
+            }           
+        }
+        &_item_load{
+            flex-direction: column;
+            & .Load{
+                i{
+                    padding: 5px;
+                    cursor: pointer;
+                }
+            }           
+        }
+        & .btnX{
+            margin: 15px;
+        }
+    }
+    & .errores{
+        color: crimson;
+        display: flex;
+        flex-direction: column;
+          
+    }
+}
+.back{
+    align-self: flex-end;
+    padding: 10px;
+}
+#file{
+    display: none;
+}
+
+.Vprevia{
+    max-height: 150px;
+    width: auto;
+}
+
+
+
+@media  screen and (max-width:476px) {
+    .FormContainer{
+        display: block;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        max-height:100vh ;
+        max-width: 100vw;     
+        
+        & .Form{
+           overflow: hidden; 
+            width: 100%;            
+        }       
+    }
+    .back{
+        display: block;
+        text-align: right;
+    }
+    
+}

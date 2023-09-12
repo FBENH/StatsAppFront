@@ -1,0 +1,137 @@
+.container{
+    min-height: 100%;    
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    background-color: #23242a;
+
+    &_h1, &_h2{
+        color: #e8e8e8;        
+    }
+    &_h1{
+        margin: 25px;
+    }
+    &_h2{
+        padding-top: 10px;
+    }
+    
+
+    & .card{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #1c1c1c;
+        border-radius: 15px;
+        color: #e8e8e8;
+        padding: 30px;
+        & .card_img{
+            padding: 10px;
+            & .img-icons{
+                color: #e8e8e8;
+                font-size: 0.8rem;
+                & .pen:hover, & .xmark:hover{
+                    opacity: 0.8;                    
+                }
+                & .xmark{
+                    color: crimson;                    
+                }
+                & .pen, & .xmark{
+                    padding: 5px;
+                }
+            }
+            & img{
+                height: 150px;
+                width: auto;
+                
+            }
+        }
+        & .card_info{
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            & form{
+                display: flex;
+                flex-direction: column;
+
+                & ul{
+                    list-style: none;                    
+                    & li{
+                        padding: 5px;
+                        & input{
+                            width: 100px;
+                            color: #e8e8e8;
+                            background: transparent;
+                        }
+                    }
+                }
+            }
+            & .editar{
+                font-size: 0.8rem;
+                cursor: pointer;
+                margin-top: 5px;
+                &:hover{
+                    opacity: 0.8;
+                }
+            }
+            & label, & h3{
+                padding: 5px;
+            }
+
+            & .btns{
+                padding: 10px;
+                margin-top: 10px;
+            }
+        }
+    }
+}
+
+.jugadores_container{
+    display: flex;
+    margin: 10px;    
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    & .jugadores{
+        max-width: 142px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: #000;
+        color: #e8e8e8;
+        flex: 15%;
+        border-radius: 15px;
+        padding: 10px;
+        
+        &:hover{
+            opacity: 0.8;
+            cursor: pointer;
+        }
+        & .jugadores_img{
+            & img{
+                height: 80px;
+                width: auto;
+            }    
+        }
+        & .jugadores_info{
+            display: flex;
+            flex-direction: column;
+        }
+    }    
+    }
+
+
+    #file{
+        display: none;
+    }
+    .back{
+        padding: 10px;
+        align-self: flex-end;   
+        &:hover{
+            opacity: 0.8;        
+        } 
+    }
+
+
+    

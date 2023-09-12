@@ -1,0 +1,29 @@
+<div class="login-container">
+    <div class="box">
+        <span class="border"></span>       
+        <form action="login" (ngSubmit)="LogIn()">
+            <h2>Iniciar sesión</h2>        
+            <div class="inputBox">
+                <input  type="text" [(ngModel)]="login.Usuario" name="usuario" required="required"/>
+                <span>Usuario</span>
+                <i></i>
+            </div>
+            <div class="inputBox">
+                <input  type="password" [(ngModel)]="login.Password" name="Contraseña" required="required"/>
+                <span>Contraseña</span>
+                <i></i>
+            </div>
+            <div class="links">
+                <a  (click)="Alert()" >Olvidé mi contraseña</a>
+                <a  (click)="Alert()" >Registrarse</a>
+            </div>   
+            <input class="submit" type="submit" value="Login"/>
+            <span class="error">{{error}}</span>
+        </form>        
+    </div>
+</div>
+
+
+
+
+

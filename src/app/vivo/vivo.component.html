@@ -1,0 +1,69 @@
+<div class="center">
+    <div class="Container">
+        <span class="back" (click)="Salir()" ><i class="fa-solid fa-xmark fx"></i></span>
+        <div class="center">
+            <div *ngIf="local" class="puntos" >
+                <span class="Lnombre">{{local.nombre+"  "}}</span>
+                <span (click)="EditarPuntaje(true)"id="total">{{buscarStat(local.id)?.Puntos ?? 0}}</span>
+            </div>
+            <div class="reloj-container">                
+                    <div class="tiempo" (click)="EditarReloj()">
+                      {{ obtenerTiempoFormateado() }}
+                    </div>                    
+                    <button (click)="startStopReloj()">
+                        <ng-container *ngIf="running; else playIcon">
+                          <i class="fa-solid fa-pause"></i>
+                        </ng-container>
+                        <ng-template #playIcon>
+                          <i class="fa-solid fa-play"></i>
+                        </ng-template>
+                      </button>
+                    <button (click)="resetReloj()"><i class="fa-solid fa-rotate-right"></i></button>                        
+            </div>
+            <div *ngIf="visitante" class="puntos" > <span id="total" (click)="EditarPuntaje(false)">
+                {{buscarStat(visitante.id)?.Puntos ?? 0}}</span><span class="Vnombre">{{"  "+visitante.nombre}}</span>
+            </div>
+        </div>        
+        <div class="Controlador-top">
+            <div class="banco" *ngIf="local" (click)="openDialog()">Jugadores {{local.nombre}}</div>
+            <div class="center">
+                <div class="vista-jugadores">
+                    <div class="box titularL" *ngFor="let jugador of titularesLocal" (click)="openDialog()">{{jugador.numero}}</div>
+                    <div class="box titularV" *ngFor="let jugador of titularesVisitante" (click)="openDialog()">{{jugador.numero}}</div>                
+                </div>
+            </div>            
+            <div class="banco" *ngIf="visitante" (click)="openDialog()">Jugadores {{visitante.nombre}}</div>
+        </div>
+        
+        <div class="panel-container">            
+            <div *ngIf="jugadoresLocal" class="banco-jugadores">                
+                <div  *ngFor="let jugador of jugadoresLocal" class="box"
+                (click)="openDialog()">{{jugador.numero}}</div>                
+            </div>
+            <div class="panel-container-inner">
+                <div class="panel_container">
+                    <div><button class="btn make" (click)="ejecutar('2',make.bind(this))">2pt</button></div>
+                    <div><button class="btn miss" (click)="ejecutar('2m',make.bind(this))">2pt</button></div>
+                    <div><button class="btn" (click)="ejecutar('def',make.bind(this))">def</button></div>
+                    <div><button class="btn" (click)="ejecutar('ofe',make.bind(this))">ofe</button></div>
+                    <div><button class="btn make" (click)="ejecutar('3',make.bind(this))">3pt</button></div>
+                    <div><button class="btn miss" (click)="ejecutar('3m',make.bind(this))">3pt</button></div>
+                    <div><button class="btn" (click)="ejecutar('per',make.bind(this))">per</button></div>
+                    <div><button class="btn" (click)="ejecutar('rob',make.bind(this))">rob</button></div>
+                    <div><button class="btn make" (click)="ejecutar('1',make.bind(this))">1pt</button></div>
+                    <div><button class="btn miss" (click)="ejecutar('1m',make.bind(this))">1pt</button></div>
+                    <div><button class="btn" (click)="ejecutar('asi',make.bind(this))">asi</button></div>
+                    <div><button class="btn" (click)="ejecutar('tap',make.bind(this))">tap</button></div>
+                    <div><button class="btn" (click)="finalizarPartido()"><i class="fa-solid fa-circle-check"></i></button></div>
+                    <div><button class="btn" (click)="Volver()"><i class="fa-solid fa-arrow-left"></i></button></div>
+                    <div><button class="btn" (click)="openDialog()">sub</button></div>
+                    <div><button class="btn" (click)="ejecutar('foul',make.bind(this))">foul</button>  </div>   
+                </div>
+            </div>            
+            <div *ngIf="jugadoresVisitante" class="banco-jugadores">                
+                <div class="box" *ngFor="let jugador of jugadoresVisitante"
+                (click)="openDialog()">{{jugador.numero}}</div>                
+            </div>
+        </div>        
+    </div>    
+</div>

@@ -1,0 +1,38 @@
+<div class="container" mat-dialog-container>
+    <h1>Nuevo Partido</h1>
+    <div class="container_fecha_lugar">
+        <div><span>Fecha: <input id="fecha" [(ngModel)]="fecha" type="date"></span>(opcional)</div>
+        <div><span>Lugar: </span><input id="lugar" [(ngModel)]="lugar" type="text" placeholder="(opcional)"></div>
+    </div>
+    <h3>Selecciona los equipos o crea nuevos:</h3>
+    <div class="container_equipo">
+        <div class="container_equipo_col1">
+            <div class="container_equipo_col1_equipo">
+                <h3>Equipo local</h3>
+            <select id="equipoLocal" [(ngModel)]="selecLocal" (change)="guardarSeleccion(true)" >
+                <option  [value]="null" disabled selected>Seleccionar</option>            
+                <option *ngFor="let equipo of equipos" [ngValue]="equipo" >{{equipo.nombre}}</option>
+            </select>
+            <div *ngIf="selecLocal">
+                <img [src]="selecLocal.escudo || './assets/empty-logo.png'" alt="Escudo" class="smallImg" >
+            </div>
+            </div>
+            <div class="container_equipo_col1_equipo">
+                <h3>Equipo visitante</h3>
+                <select id="equipoVisitante" [(ngModel)]="selecVisita" (change)="guardarSeleccion(false)" >
+                    <option  [value]="null" disabled selected>Seleccionar</option>  
+                    <option *ngFor="let equipo of equipos" [ngValue]="equipo" >{{equipo.nombre}}</option>
+                </select>
+                <div *ngIf="selecVisita">
+                    <img [src]="selecVisita.escudo || './assets/empty-logo.png'" alt="Escudo" class="smallImg">
+                </div>
+            </div>          
+        </div>
+        <div class="container_equipo_Nuevo">
+            <div (click)="CrearEquiposRapido(true)" class="container_equipo_Nuevo_opcion"><span>Nuevo equipo</span><i class="fa-solid fa-plus"></i></div>
+            <div (click)="CrearEquiposRapido(false)" class="container_equipo_Nuevo_opcion"><span>Nuevo equipo</span><i class="fa-solid fa-plus"></i></div>
+        </div>
+    </div> 
+    <button class="btnX" (click)="Iniciar()">Iniciar Partido</button>
+</div>
+

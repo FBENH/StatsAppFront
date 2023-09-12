@@ -1,0 +1,156 @@
+<div class="container">
+    <a class="back" routerLink="/Jugadores"><i class="fa-solid fa-xmark fx"></i></a>
+    <div class="card">        
+        <div *ngIf="jugador">
+            <img [src]="imageSrc || './assets/Placeholder.webp'" alt="Foto de jugador">
+            <div class="img-icons" *ngIf="mod">
+                <span>Editar imágen: </span>
+                <label for="file"><i class="fa-solid fa-pencil pen"></i></label>
+                <i (click)="reset()" class="fa-solid fa-xmark xmark" ></i>
+            </div>
+            <input #seleccion id="file" type='file' (change)="readURL($event);" accept="image/*" />
+        </div>
+        <div class="col">            
+            <div class="info" *ngIf="jugador && !mod" >
+                <ul>
+                    <i class="fa-solid fa-pencil pen" (click)="ActivarModificar()"></i><span>Editar información</span>
+                    <li>{{this.jugadorForm.get('nombre').value}}</li>
+                    <li>{{this.jugadorForm.get('numero').value}}</li>
+                    <li>Posicion: {{this.jugadorForm.get('posicion').value}}</li>
+                    <li>Altura: {{this.jugadorForm.get('altura').value}}</li>
+                    <li>Peso: {{this.jugadorForm.get('peso').value}}</li>
+                </ul>
+            </div>
+            <div class="info" *ngIf="jugador && mod"  >
+                <form [formGroup]="jugadorForm">
+                    <ul>
+                        <i class="fa-solid fa-pencil" (click)="ActivarModificar()"></i><span>Editar información</span>
+                        <li>Nombre: <input id="nombre" type="text" formControlName="nombre"></li>
+                        <li>Número: <input id="numero" type="text" min="0" max="99" maxlength="2" formControlName="numero"></li>
+                        <li>Posición: 
+                            <select id="posicion" formControlName="posicion" >
+                                <option selected disabled [value]="''">Posición</option>
+                                <option value="Base">Base</option>
+                                <option value="Escolta">Escolta</option>
+                                <option value="Alero">Alero</option>
+                                <option value="Ala-Pivot">Ala-Pivot</option>
+                                <option value="Pivot">Pivot</option>
+                            </select>
+                        </li>
+                        <li>Equipo: 
+                            <select id="equipo" *ngIf="equipos" formControlName="equipoSelec" (change)="Change()" >
+                                <option [value]="''">Sin equipo</option>
+                                <option *ngFor="let equipo of equipos" [value]="equipo.id">{{equipo.nombre}}</option>
+                            </select>
+                        </li>
+                        <li>Altura: <input id="altura" type="text" formControlName="altura"> cm</li>
+                        <li>Peso: <input id="peso" type="text" formControlName="peso"> kg</li>                        
+                    </ul>
+                </form>
+            </div>
+            <button *ngIf="!mod" class="btnX" (click)="Eliminar()" >Eliminar</button>
+            <div class="btns">
+                <button [disabled]="!jugadorForm.valid"  *ngIf="mod"  class="btnX check" (click)="Modificar()"><i class="fa-solid fa-check check"></i></button>
+                <button *ngIf="mod" class="btnX" (click)="ActivarModificar()" ><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        <div class="equipo" *ngIf="jugador">
+            <span *ngIf="jugador.equipo?.nombre" >Equipo: {{jugador.equipo.nombre}}</span>
+            <img *ngIf="jugador.equipo?.escudo" [src]="jugador.equipo.escudo" alt="Escudo">
+        </div> 
+    </div>
+    <ng-container *ngIf="jugador && partidos">
+    <div *ngIf="jugador.estadisticasJugador" class="stats_container" >        
+            <h2 class="h2">Promedios: </h2>        
+            <table class="stats-table">
+                <thead>
+                  <tr>                   
+                    <th>Pts</th>
+                    <th>Asis</th>
+                    <th>Reb</th>                    
+                    <th>TC%</th>
+                    <th>2pt</th>
+                    <th>3pt</th>
+                    <th>TL</th>
+                    <th>ROB</th>
+                    <th>TAP</th>
+                    <th>OReb</th>
+                    <th>DReb</th>
+                    <th>PER</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="tr">
+                    <td>{{Promediar('puntos')}}</td>                   
+                    <td>{{Promediar('asistencias')}}</td>                    
+                    <td>{{Promediar('rebotes')}}</td>
+                    <td>{{Promediar('TC')}}%</td>
+                    <td>{{Promediar('2pt')}}%</td>
+                    <td>{{Promediar('3pt')}}%</td>
+                    <td>{{Promediar('1pt')}}%</td>
+                    <td>{{Promediar('robos')}}</td>
+                    <td>{{Promediar('tapones')}}</td>                    
+                    <td>{{Promediar('rebotesOfensivos')}}</td>
+                    <td>{{Promediar('rebotesDefensivos')}}</td>
+                    <td>{{Promediar('perdidas')}}</td>                    
+                  </tr>
+                </tbody>
+              </table>             
+    </div>
+</ng-container>
+<ng-container *ngIf="jugador" > 
+    <div *ngIf="jugador && partidos" class="stats_container">
+        <h2  class="h2">Estadísticas de Partidos:</h2>         
+            <table class="stats-table">
+                <thead>
+                  <tr>    
+                    <th>Fecha</th>                
+                    <th>Partido</th>
+                    <th>Min</th>
+                    <th>Pts</th>
+                    <th>Asis</th>
+                    <th>Reb</th>
+                    <th>OReb</th>
+                    <th>DReb</th>
+                    <th>TC%</th>
+                    <th>2pt</th>
+                    <th>3pt</th>
+                    <th>TL</th>
+                    <th>ROB</th>
+                    <th>TAP</th>
+                    <th>PER</th>
+                  </tr>
+                </thead>
+                <ng-container *ngIf="partidos">
+                <ng-container *ngFor="let e of paginatedStats; let i='index'">
+                <tbody>                
+                  <tr class="tr" 
+                  (click)="VerDetallesPartido(paginatedPartidos[i].id,paginatedPartidos[i].equipoVisitanteId,paginatedPartidos[i].equipoLocalId)" >
+                    <td>{{ FormatoFecha(paginatedPartidos[i].fecha) }}</td>                    
+                    <td>{{ paginatedPartidos[i].local }} vs {{ paginatedPartidos[i].visitante }}</td>
+                    <td>{{ formatTimeToMinutes(e.minutos) }}</td>
+                    <td>{{ e.puntos }}</td>
+                    <td>{{ e.asistencias }}</td>
+                    <td>{{ e.rebotes }}</td>
+                    <td>{{ e.rebotesOfensivos }}</td>
+                    <td>{{ e.rebotesDefensivos }}</td>
+                    <td>{{ PorcentajeTC(e) }}</td>
+                    <td>{{ e.aciertos2Puntos }}/{{ e.intentos2Puntos }} ({{ PorcentajesTiros(e, '2pt') }}%)</td>
+                    <td>{{ e.aciertos3Puntos }}/{{ e.intentos3Puntos }} ({{ PorcentajesTiros(e, '3pt') }}%)</td>
+                    <td>{{ e.aciertos1Punto }}/{{ e.intentos1Punto }} ({{ PorcentajesTiros(e, '1pt') }}%)</td>
+                    <td>{{ e.robos }}</td>
+                    <td>{{ e.tapones }}</td>
+                    <td>{{ e.perdidas }}</td>
+                  </tr>
+                </tbody>
+                </ng-container>
+                </ng-container>
+              </table>          
+    </div>  
+</ng-container>   
+</div>
+<ng-container *ngIf="jugador && jugador.estadisticasJugador.length>12">
+    <mat-paginator [pageSize]="12" 
+      [length]="jugador.estadisticasJugador.length" (page)="handlePageEvent($event)"> </mat-paginator>
+  </ng-container>
+

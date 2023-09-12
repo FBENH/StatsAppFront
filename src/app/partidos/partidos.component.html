@@ -1,0 +1,52 @@
+<div class="container">
+  <div class="search__container">        
+    <input class="search__input" id="busqueda" type="text" [(ngModel)]="busqueda" (input)="Filtrar(busqueda)" placeholder="Buscar equipo" >
+    <div class="filter_container">
+      <span >Filtros <i class="fa-solid fa-filter fi"></i></span> 
+      <div>      
+        <select id="equipoFiltro" [(ngModel)]="equipoFiltro" (change)="Filtrar(busqueda)"  >
+          <option selected [ngValue]="null">Todos</option>              
+          <option *ngFor="let equipo of equipos" [ngValue]="equipo.nombre">{{equipo.nombre}}</option>
+        </select>
+        <div>
+          <span>Desde:{{" "}}</span><input type="date" [(ngModel)]="fechaInicial" (ngModelChange)="verificarFiltro()"><br>
+          <span>Hasta:{{" "}}</span><input type="date" [(ngModel)]="fechaFinal" (ngModelChange)="verificarFiltro()">
+        </div>      
+      </div>
+    </div> 
+    
+    <div class="go-back"><a routerLink="/menu"><i class="fa-solid fa-xmark fx"></i></a></div> 
+  </div>
+  <div style="padding-top: 100px; height: 91%;">
+      <div class="stats_container">                      
+          <table class="stats-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Local</th>                            
+                  <th>Visitante</th>
+                  <th>Ganador</th>
+                  <th>Lugar</th>            
+                </tr>
+              </thead>
+              <ng-container *ngIf="paginatedPartidos">
+              <ng-container *ngFor="let p of paginatedPartidos" >                         
+              <tbody>
+                <tr class="tr" (click)="VerDetalles(p.id,p.equipoVisitanteId ,p.equipoLocalId)">
+                  <td>{{ FormatoFecha(p.fecha) }}</td>
+                  <td>{{ p.local }}</td>                            
+                  <td>{{ p.visitante }}</td>
+                  <td>{{ p.ganadorNombre }}</td>
+                  <td>{{ p.lugar }}</td>           
+                </tr>
+              </tbody>
+          </ng-container>
+          </ng-container>                    
+      </table> 
+    </div>    
+  </div>
+  <ng-container *ngIf="partidosFiltrados && partidosFiltrados.length>12">
+    <mat-paginator [pageSize]="12" 
+    [length]="partidosFiltrados.length" (page)="handlePageEvent($event)"> </mat-paginator>
+  </ng-container>  
+</div>

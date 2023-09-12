@@ -1,0 +1,221 @@
+.center{
+    display: flex;
+    justify-content: center;
+    background-color: #23242a; 
+    overflow: hidden;
+    
+}
+.Container{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    padding: 5px 20px;
+    max-width: 1000px;
+    background-color: #23242a;
+    color: #e8e8e8;
+    min-height: 100vh;
+    height: 100%;
+    overflow: hidden;
+}
+
+.panel-container{
+    display: flex;
+    justify-content: center;    
+    width: 100%;
+    margin: 1%;        
+}
+.panel-container-inner{
+    width: 50vw;
+    min-width: 400px;
+    max-width: 669px;
+}
+
+.box{
+    flex-wrap: nowrap;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 3rem;
+    height: 3rem;    
+    border: solid #e8e8e8 3px;
+    &:hover{
+        cursor: pointer;
+        opacity: 0.8;
+    }
+}
+.vista-jugadores{
+    display: flex;
+    width: 50vw;
+    max-width: 669px;
+    height: 10vh;
+    min-height: 70px;   
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+}
+
+.reloj-container{
+    border: 1px solid black;
+    margin-bottom: 1%;
+    font-size: 1.5rem;
+    text-align: center;
+    width: 120px;
+    & button{
+        background-color: transparent;
+        outline: none;
+        border: none;
+        padding: 5px;
+        font-size: 1.5rem;
+        color: #e8e8e8;
+
+        &:hover{
+            cursor: pointer;
+            opacity: 0.8;
+        }
+    }
+}
+
+.Controlador-top{    
+    display: flex;
+    width: 100%;
+    justify-content: center;    
+}
+.banco{    
+    height: 10vh;
+    width: 20vw;
+    max-width: 145px; 
+    text-align: center;
+    line-height: 10vh;
+    min-height: 70px;
+}
+.banco-jugadores{    
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 20vw;   
+    max-width: 145px;       
+    gap: 5%;
+    padding-top: 20px;    
+    align-content: flex-start;      
+}
+
+.puntos{
+    padding: 10px;
+    font-size: 2.5rem;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.titularL{
+    border: solid #9e3f3f 3px;
+}
+.titularV{
+    border: solid #413f9e 3px;
+}
+.Lnombre{    
+    color:  #9e3f3f;    
+}
+.Vnombre{
+    color:  #413f9e; 
+}
+
+.tiempo:hover{
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+#total:hover{
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.back{
+    align-self: flex-end;    
+    &:hover{
+        cursor: pointer;
+        opacity: 0.8;        
+    } 
+}
+
+@media screen and (max-width: 867px){
+    .Container{
+        width: 500px;
+        max-width: 500px;
+    }   
+    .banco, .banco-jugadores{
+        display: none;
+    }
+    .panel-container{
+        min-width: 440px;
+    }
+    .vista-jugadores{
+        flex-wrap: wrap;
+        height: 200px;
+        width: 440px;
+        min-height: 200px;
+        min-width: 310px;
+    }
+    .box{
+        display: flex;
+        min-width: 3rem;
+        min-height: 3rem;
+        max-width: 3rem;
+        max-height: 3rem;
+        margin: 2px;
+    }
+    .Lnombre,.Vnombre{    
+        /* display: none; */  
+        font-size: 1.5rem; 
+    }   
+}
+
+.panel_container{    
+    display: flex;
+    justify-content: center;
+    align-items: center;    
+    flex-wrap: wrap;
+    padding: 20px;
+    min-width: 440px;
+}
+
+.panel_container div{
+    flex: 25%;
+    padding: 10px;
+}
+
+.btn{
+    border-radius: 50%;
+    font-size: 1.5rem;
+    width: 5rem;
+    height: 5rem;
+    border: 3px solid #e8e8e8;
+}
+.btn:hover{
+    cursor: pointer;
+    background-color: #000;
+    color: #fff;
+}
+
+.make{
+    border: 3px solid green;
+}
+
+.miss{
+    border: 3px solid red;
+}
+
+@media screen and (max-width: 400px){
+    .btn{
+        width: 3rem;
+        height: 3rem;
+        font-size: 1.3rem;
+    }
+}
+@media screen and (max-width: 486px){
+    .Lnombre,.Vnombre{    
+        /* display: none; */  
+        font-size: 1.2rem; 
+    }    
+}
+

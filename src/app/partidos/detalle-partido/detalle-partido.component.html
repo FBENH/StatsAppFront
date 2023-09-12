@@ -1,0 +1,207 @@
+<div class="container" *ngIf="partidoCompleto">
+  <a routerLink="/menu"><i class="fa-solid fa-xmark fx"></i></a>
+  <h1>Resultado</h1>
+  <h2>
+    <span class="highlightL">{{partidoCompleto.local+" "}}</span>{{this.estadisticaLocal[0].puntos}}
+    <span class="highlightV">{{partidoCompleto.visitante+" "}}</span>{{this.estadisticaVisitante[0].puntos}}
+  </h2>  
+  <section>
+    <h2>Total <span class="highlightL">{{partidoCompleto.local}}</span></h2>  
+  <div class="stats_container">                      
+      <table class="stats-table">
+          <thead>
+            <tr>                                        
+              <th>Pts</th>
+              <th>Asis</th>
+              <th>Reb</th>
+              <th>OReb</th>
+              <th>DReb</th>
+              <th>TC%</th>
+              <th>2pt</th>
+              <th>3pt</th>
+              <th>TL</th>
+              <th>ROB</th>
+              <th>TAP</th>
+              <th>PER</th>
+              <th>Resultado</th>
+            </tr>
+          </thead>
+          <ng-container *ngIf="partidoCompleto && estadisticaLocal">                                 
+          <tbody>
+            <tr class="tr" *ngFor="let e of estadisticaLocal" >
+              <td>{{e.puntos}}</td>
+              <td>{{e.asistencias}}</td>                            
+              <td>{{e.rebotes}}</td>
+              <td>{{e.rebotesOfensivos}}</td>
+              <td>{{e.rebotesDefensivos}}</td>
+              <td>{{PorcentajeTC(e)}}</td>
+              <td>{{ e.aciertos2Puntos }}/{{ e.intentos2Puntos }} ({{ PorcentajesTiros(e, '2pt') }}%)</td>
+              <td>{{ e.aciertos3Puntos }}/{{ e.intentos3Puntos }} ({{ PorcentajesTiros(e, '3pt') }}%)</td>
+              <td>{{ e.aciertos1Punto }}/{{ e.intentos1Punto }} ({{ PorcentajesTiros(e, '1pt') }}%)</td>
+              <td>{{e.robos}}</td>
+              <td>{{e.tapones}}</td>
+              <td>{{e.perdidas}}</td>
+              <td>
+                <strong>{{this.estadisticaLocal[0].puntos> this.estadisticaVisitante[0].puntos? 'Victoria':'Derrota'}}</strong>             
+              </td>            
+            </tr>
+          </tbody>
+      </ng-container>                        
+  </table>
+  </div> 
+  <h3>Estadísticas individuales</h3>
+  <ng-container *ngIf="estadisticaJLocal.length>0">
+    <div class="stats_container">
+    <table class="stats-table">
+      <thead>
+        <tr>        
+          <th>Jugador</th>
+          <th>N°</th>
+          <th>Min</th>
+          <th>Pts</th>
+          <th>Asis</th>
+          <th>Reb</th>
+          <th>OReb</th>
+          <th>DReb</th>
+          <th>TC%</th>
+          <th>2pt</th>
+          <th>3pt</th>
+          <th>TL</th>
+          <th>ROB</th>
+          <th>TAP</th>
+          <th>PER</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="tr" *ngFor="let e of estadisticaJLocal">
+          <td>{{e.nombre}}</td>
+          <td>{{e.numero}}</td>     
+          <td>{{ formatTimeToMinutes(e.estadisticasJugador[0].minutos)}}</td>
+          <td>{{ e.estadisticasJugador[0].puntos }}</td>
+          <td>{{ e.estadisticasJugador[0].asistencias }}</td>
+          <td>{{ e.estadisticasJugador[0].rebotes }}</td>
+          <td>{{ e.estadisticasJugador[0].rebotesOfensivos }}</td>
+          <td>{{ e.estadisticasJugador[0].rebotesDefensivos }}</td>
+          <td>{{ PorcentajeTC(e.estadisticasJugador[0]) }}</td>
+          <td>
+            {{ e.estadisticasJugador[0].aciertos2Puntos }}/{{ e.estadisticasJugador[0].intentos2Puntos }} 
+            ({{ PorcentajesTiros(e.estadisticasJugador[0], '2pt') }}%)
+          </td>
+          <td>
+            {{ e.estadisticasJugador[0].aciertos3Puntos }}/{{ e.estadisticasJugador[0].intentos3Puntos }} 
+            ({{ PorcentajesTiros(e.estadisticasJugador[0], '3pt') }}%)
+          </td>
+          <td>
+            {{ e.estadisticasJugador[0].aciertos1Punto }}/{{ e.estadisticasJugador[0].intentos1Punto }} 
+            ({{ PorcentajesTiros(e.estadisticasJugador[0], '1pt') }}%)
+          </td>
+          <td>{{ e.estadisticasJugador[0].robos }}</td>
+          <td>{{ e.estadisticasJugador[0].tapones }}</td>
+          <td>{{ e.estadisticasJugador[0].perdidas }}</td>
+        </tr>
+      </tbody>
+    </table>  
+  </div>                       
+  </ng-container> 
+  </section>
+  <section>
+    <h2>Total <span class="highlightV">{{partidoCompleto.visitante}}</span></h2>  
+  <div class="stats_container">                      
+      <table class="stats-table">
+          <thead>
+            <tr>                                        
+              <th>Pts</th>
+              <th>Asis</th>
+              <th>Reb</th>
+              <th>OReb</th>
+              <th>DReb</th>
+              <th>TC%</th>
+              <th>2pt</th>
+              <th>3pt</th>
+              <th>TL</th>
+              <th>ROB</th>
+              <th>TAP</th>
+              <th>PER</th>
+              <th>Resultado</th>
+            </tr>
+          </thead>
+          <ng-container *ngIf="partidoCompleto && estadisticaVisitante">                                 
+          <tbody>
+            <tr class="tr" *ngFor="let e of estadisticaVisitante" >
+              <td>{{e.puntos}}</td>
+              <td>{{e.asistencias}}</td>                            
+              <td>{{e.rebotes}}</td>
+              <td>{{e.rebotesOfensivos}}</td>
+              <td>{{e.rebotesDefensivos}}</td>
+              <td>{{PorcentajeTC(e)}}</td>
+              <td>{{ e.aciertos2Puntos }}/{{ e.intentos2Puntos }} ({{ PorcentajesTiros(e, '2pt') }}%)</td>
+              <td>{{ e.aciertos3Puntos }}/{{ e.intentos3Puntos }} ({{ PorcentajesTiros(e, '3pt') }}%)</td>
+              <td>{{ e.aciertos1Punto }}/{{ e.intentos1Punto }} ({{ PorcentajesTiros(e, '1pt') }}%)</td>
+              <td>{{e.robos}}</td>
+              <td>{{e.tapones}}</td>
+              <td>{{e.perdidas}}</td>
+              <td>
+                <strong>{{this.estadisticaLocal[0].puntos< this.estadisticaVisitante[0].puntos? 'Victoria':'Derrota'}}</strong>             
+              </td>            
+            </tr>
+          </tbody>
+      </ng-container>                        
+  </table>
+  </div>  
+  <h3>Estadísticas individuales</h3>
+  <ng-container *ngIf="estadisticaJVisitante.length>0">
+    <div class="stats_container">
+    <table class="stats-table">
+      <thead>
+        <tr>        
+          <th>Jugador</th>
+          <th>N°</th>
+          <th>Min</th>
+          <th>Pts</th>
+          <th>Asis</th>
+          <th>Reb</th>
+          <th>OReb</th>
+          <th>DReb</th>
+          <th>TC%</th>
+          <th>2pt</th>
+          <th>3pt</th>
+          <th>TL</th>
+          <th>ROB</th>
+          <th>TAP</th>
+          <th>PER</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="tr" *ngFor="let e of estadisticaJVisitante">
+          <td>{{e.nombre}}</td>
+          <td>{{e.numero}}</td>     
+          <td>{{ formatTimeToMinutes(e.estadisticasJugador[0].minutos)}}</td>
+          <td>{{ e.estadisticasJugador[0].puntos }}</td>
+          <td>{{ e.estadisticasJugador[0].asistencias }}</td>
+          <td>{{ e.estadisticasJugador[0].rebotes }}</td>
+          <td>{{ e.estadisticasJugador[0].rebotesOfensivos }}</td>
+          <td>{{ e.estadisticasJugador[0].rebotesDefensivos }}</td>
+          <td>{{ PorcentajeTC(e.estadisticasJugador[0]) }}</td>
+          <td>
+            {{ e.estadisticasJugador[0].aciertos2Puntos }}/{{ e.estadisticasJugador[0].intentos2Puntos }} 
+            ({{ PorcentajesTiros(e.estadisticasJugador[0], '2pt') }}%)
+          </td>
+          <td>
+            {{ e.estadisticasJugador[0].aciertos3Puntos }}/{{ e.estadisticasJugador[0].intentos3Puntos }} 
+            ({{ PorcentajesTiros(e.estadisticasJugador[0], '3pt') }}%)
+          </td>
+          <td>
+            {{ e.estadisticasJugador[0].aciertos1Punto }}/{{ e.estadisticasJugador[0].intentos1Punto }} 
+            ({{ PorcentajesTiros(e.estadisticasJugador[0], '1pt') }}%)
+          </td>
+          <td>{{ e.estadisticasJugador[0].robos }}</td>
+          <td>{{ e.estadisticasJugador[0].tapones }}</td>
+          <td>{{ e.estadisticasJugador[0].perdidas }}</td>
+        </tr>
+      </tbody>
+    </table> 
+  </div>                           
+  </ng-container>
+  </section>  
+</div> 
+

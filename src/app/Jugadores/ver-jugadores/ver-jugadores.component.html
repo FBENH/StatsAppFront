@@ -1,0 +1,49 @@
+<div class="wrap">
+    <div class="search__container">        
+        <input class="search__input" id="busqueda" type="text" [(ngModel)]="busqueda" (input)="Filtrar(busqueda)" placeholder="Buscar jugador" >
+        <div class="filter_container">
+          <span>Filtrar <i class="fa-solid fa-filter fi"></i></span> 
+          <div>
+            <select id="filtro" [(ngModel)]="equipoFiltro" (change)="Filtrar(busqueda)"  >
+              <option selected [ngValue]="null">Todos</option>
+              <option [ngValue]="-1">Sin equipo</option>
+              <option *ngFor="let equipo of equipos" [ngValue]="equipo.id">{{equipo.nombre}}</option>
+            </select>
+          </div>
+        </div>
+        <a routerLink="/menu" class="fx"><i class="fa-solid fa-xmark "></i></a>      
+    </div>     
+    <div class="container">               
+        <div class="card" *ngFor="let jugador of paginatedJugadores" (click)="VerDetalles(jugador.id)" >
+          <div class="title">
+            <h1>Detalles de Jugador</h1>        
+          </div>
+          <div class="image">
+            <div class="outer">
+              <div class="inner">
+                <img [src]="jugador.foto || './assets/Placeholder.webp'" alt="Vista previa">            
+              </div>
+            </div>
+          </div>           
+          <div class="name">
+              {{jugador.nombre}}
+          </div>
+          <div class="details">
+              <div class="col">
+                  <ul type="name">                 
+                      <li>Número: {{jugador.numero}}</li>
+                      <li>Equipo: {{jugador.equipo}}</li>
+                      <li>Posición: {{jugador.posicion}}</li>                  
+                      <li>Altura: {{jugador.altura}}</li>
+                      <li>Peso: {{jugador.peso}}</li>                        
+                  </ul>
+              </div>              
+          </div>               
+        </div>                                  
+  </div>   
+  <ng-container *ngIf="jugadoresFiltro && jugadoresFiltro.length>12">
+    <mat-paginator [pageSize]="12" 
+      [length]="jugadoresFiltro.length" (page)="handlePageEvent($event)"> </mat-paginator>
+  </ng-container>   
+</div>
+  

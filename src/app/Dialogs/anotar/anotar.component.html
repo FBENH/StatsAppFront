@@ -1,0 +1,34 @@
+<div class="container_equipos" *ngIf="elegirEquipo">
+    <div class="equipo" *ngIf="local" (click)="elegir(local)">
+        <h4>{{local.nombre}}</h4>
+        <img [src]="local.escudo || './assets/empty-logo.png'" alt="Escudo">
+    </div>
+    <div class="equipo" *ngIf="visitante" (click)="elegir(visitante)">
+        <h4>{{visitante.nombre}}</h4>
+        <img [src]="visitante.escudo || './assets/empty-logo.png'" alt="Escudo">
+    </div>
+</div>
+<div class="container_jugadores" *ngIf="!elegirEquipo && equipoSelec===local"  >
+    <ng-container *ngIf="titularesLocal.length===0" >
+        <div class="vacio">
+            <span>Debe seleccionar los jugadores titulares</span>
+            <button class="btnX" (click)="Ok()" >Ok</button>         
+        </div>        
+    </ng-container>
+    <div class="box" *ngFor="let jugador of titularesLocal" (click)="elegirJugador(jugador)">
+        <p>{{jugador.nombre}}</p>
+        <p>{{jugador.numero}}</p>
+    </div>
+</div>
+<div class="container_jugadores" *ngIf="!elegirEquipo && equipoSelec===visitante">
+    <ng-container *ngIf="titularesVisitante.length===0" >
+        <div class="vacio">
+            <span>Debe seleccionar los jugadores titulares</span>
+            <button class="btnX" (click)="Ok()" >Ok</button>         
+        </div>        
+    </ng-container>
+    <div class="box" *ngFor="let jugador of titularesVisitante" (click)="elegirJugador(jugador)">
+        <p>{{jugador.nombre}}</p>
+        <p>{{jugador.numero}}</p>
+    </div>
+</div>

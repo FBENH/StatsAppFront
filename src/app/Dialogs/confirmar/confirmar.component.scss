@@ -1,0 +1,29 @@
+.btnX{
+    --color: #000;
+}
+.btnX:hover,
+.btnX:active{
+    color: #fff;
+}
+
+.btns{
+    display: flex;
+    justify-content: center;
+}
+#mod{
+    --color:midnightblue;
+}
+#mod:active,
+#mod:hover{
+    --color:midnightblue;
+}
+#Del{
+    --color:crimson;
+}
+#Del:active,
+#Del:hover{
+    --color:crimson;
+}
+h1,h3{
+    text-align: center;
+}

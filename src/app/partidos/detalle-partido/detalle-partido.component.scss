@@ -1,0 +1,39 @@
+.container{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+    background-color: #23242a;
+    & h1, & h2 , & h3{
+        color: #e8e8e8;
+    }    
+    & h1{
+        padding: 20px;
+    }
+    & h3{
+        padding-top: 20px;
+    }
+
+    & a{
+        align-self: flex-end;
+        padding: 10px;      
+    }    
+}
+.highlightL{
+    color: #9e3f3f;
+}
+.highlightV{
+    color: #413f9e;
+}
+section{
+    margin-top: 50px;
+    text-align: center;
+}
+
+@media screen and (max-width: 976px){
+    .container{
+        display: block;
+        text-align: center;
+    }
+}
