@@ -11,7 +11,7 @@ import { EquipoRapido } from '../Models/EquipoRapido';
 export class EquipoService {
 
   
-  apiUrl:string= "https://statsappapi.azurewebsites.net/Equipo/";
+  apiUrl:string= "";
 
   constructor(private http:HttpClient) { }
 
