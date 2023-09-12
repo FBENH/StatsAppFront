@@ -20,8 +20,8 @@ export class UsuarioServiceService {
     return this.usuarioSubject.value;
   }
 
-  /* url:string= "https://localhost:7056/Usuario/LogIn";  */
-  url:string= 'https://statsappapi.azurewebsites.net/Usuario/LogIn';
+ 
+  url:string= '';
 
   constructor(private http:HttpClient){
     this.usuarioSubject = new BehaviorSubject<User>(JSON.parse(localStorage.getItem('usuLog')));
