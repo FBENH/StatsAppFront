@@ -9,7 +9,7 @@ import { Response } from '../Models/response';
 export class ImagenService {
 
   constructor(private http:HttpClient) { }
-  apiService= "https://statsappapi.azurewebsites.net/Imagen/Upload";
+  apiService= "";
   /* apiService= "https://localhost:7056/Imagen/Upload"; */
   
   uploadImage(image: File): Observable<Response> {
