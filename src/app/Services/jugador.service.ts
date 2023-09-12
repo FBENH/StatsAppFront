@@ -14,7 +14,7 @@ export class JugadorService {
 
   constructor(private http:HttpClient) { }
 
-  url:string= "https://statsappapi.azurewebsites.net/Jugadores/";
+  url:string= "";
 
   CrearJugador(jugador:Jugador):Observable<Response>{
     return this.http.post<Response>(this.url+"Crear",jugador).pipe(map(res=>{
