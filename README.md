@@ -10,14 +10,17 @@ Angular app for keeping basketball box scores: you track a game live from your p
 
 ## How the live game works
 
-All live-game logic is in `src/app/core/partido-en-vivo.ts`, separate from the screen:
+A game is a list of plays (`core/registro.ts`). The box score, minutes played and who is on court are all computed from that list, with the same rules the API uses when the game ends (`Services/Planilla.cs` in ApiStatsApp).
 
-- The clock is based on real time (`Date.now()`), not on counting interval ticks, so it doesn't drift or slow down in a background tab.
-- Minutes played are added to the players on court whenever the clock stops or there is a substitution.
-- Undo works for several steps (plays, substitutions, score corrections). It never rewinds the clock or minutes played.
-- The game in progress is saved to `localStorage` on every change, so reloading the page loses nothing.
+`core/partido-en-vivo.ts` keeps the game in progress:
 
-Its tests are in `partido-en-vivo.spec.ts` and pass explicit times, so they don't depend on the real clock.
+- The game is created in the API when it starts, and each play is sent as soon as it's entered. Plays carry an id generated on the device, so a retry never duplicates them.
+- Without a connection, plays stay in a local queue (saved in `localStorage`) and are sent when the connection comes back. The screen shows whether everything is saved.
+- A game can be resumed from another device: it downloads the plays and continues.
+- The clock is based on real time (`Date.now()`), so it doesn't drift in a background tab. Each play records the quarter and the time left, which is how minutes are computed.
+- Undo removes the last play (a multi-player substitution is undone as a whole), locally and in the API.
+
+Tests in `registro.spec.ts` and `partido-en-vivo.spec.ts` use explicit times and a fake HTTP backend.
 
 ## Running it
 

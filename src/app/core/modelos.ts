@@ -87,6 +87,7 @@ export interface PartidoResumen {
   equipoVisitanteId: number;
   ganador: number | null;
   ganadorNombre: string | null;
+  estado?: 'Finalizado' | 'EnCurso';
 }
 
 export interface PartidoDetalle extends PartidoResumen {

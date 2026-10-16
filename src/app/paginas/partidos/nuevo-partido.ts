@@ -1,10 +1,10 @@
-import { Component, inject, resource, signal } from '@angular/core';
+import { Component, computed, inject, resource, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ErrorApi, mensajeDeError } from '../../core/api';
 import { Equipo } from '../../core/modelos';
 import { EquipoEnVivo, PartidoEnVivo } from '../../core/partido-en-vivo';
-import { Equipos, Jugadores } from '../../core/servicios';
+import { Equipos, Jugadores, PartidoEnCurso, Partidos } from '../../core/servicios';
 
 @Component({
   imports: [FormsModule, RouterLink],
@@ -13,9 +13,22 @@ import { Equipos, Jugadores } from '../../core/servicios';
       <h1>Nuevo partido</h1>
       @if (vivo.estado()) {
         <p class="tarjeta aviso">
-          Ya hay un partido en curso en este dispositivo. Si empezás otro, se descarta.
+          Ya hay un partido en curso en este dispositivo. Si empezás o retomás otro, deja de anotarse acá
+          (lo ya guardado queda en tu cuenta).
           <a routerLink="/partidos/en-vivo">Volver al partido en curso</a>
         </p>
+      }
+      @if (otrosEnCurso().length > 0) {
+        <div class="tarjeta en-curso">
+          <h2>Partidos sin terminar</h2>
+          <p class="suave">Se empezaron a anotar y no se terminaron. Podés seguirlos desde este dispositivo.</p>
+          @for (p of otrosEnCurso(); track p.id) {
+            <div class="fila">
+              <span>{{ p.local }} vs {{ p.visitante }} · {{ p.jugadas }} jugadas</span>
+              <button class="boton chico" type="button" (click)="retomar(p)" [disabled]="ocupado()">Seguir anotando</button>
+            </div>
+          }
+        </div>
       }
       <div class="tarjeta formulario">
         <div class="campos-dobles">
@@ -33,6 +46,10 @@ import { Equipos, Jugadores } from '../../core/servicios';
           <label class="campo"><span>Fecha</span><input type="date" [(ngModel)]="fecha" /></label>
           <label class="campo"><span>Lugar (opcional)</span><input [(ngModel)]="lugar" maxlength="100" /></label>
         </div>
+        <label class="campo minutos">
+          <span>Minutos por cuarto</span>
+          <input type="number" [(ngModel)]="duracionCuartoMin" min="1" max="20" />
+        </label>
 
         <details>
           <summary>¿El equipo no está cargado? Crealo rápido con los números de camiseta</summary>
@@ -56,11 +73,16 @@ import { Equipos, Jugadores } from '../../core/servicios';
     .formulario { max-width: 640px; }
     summary { cursor: pointer; color: var(--acento); font-weight: 600; }
     .rapido { margin-top: 0.75rem; }
+    .minutos { max-width: 10rem; }
+    .en-curso { margin-bottom: 1rem; display: grid; gap: 0.5rem; }
+    .en-curso h2, .en-curso p { margin: 0; }
+    .en-curso .fila { justify-content: space-between; }
   `,
 })
 export default class NuevoPartido {
   private readonly equiposServicio = inject(Equipos);
   private readonly jugadores = inject(Jugadores);
+  private readonly partidos = inject(Partidos);
   private readonly router = inject(Router);
   protected readonly vivo = inject(PartidoEnVivo);
 
@@ -69,6 +91,11 @@ export default class NuevoPartido {
     { clave: 'visitante', titulo: 'Visitante' },
   ] as const;
   protected readonly equipos = resource({ loader: () => this.equiposServicio.listar() });
+  private readonly enCurso = resource({ loader: () => this.partidos.enCurso() });
+  protected readonly otrosEnCurso = computed(() =>
+    (this.enCurso.value() ?? []).filter((p) => p.id !== this.vivo.estado()?.partidoId),
+  );
+  protected duracionCuartoMin = 10;
   protected seleccion: Record<'local' | 'visitante', number | null> = { local: null, visitante: null };
   protected fecha = new Date().toISOString().slice(0, 10);
   protected lugar = '';
@@ -99,13 +126,41 @@ export default class NuevoPartido {
       const [l, v] = await Promise.all([this.equipoEnVivo(local), this.equipoEnVivo(visitante)]);
       const sinJugadores = [l, v].find((e) => e.jugadores.length === 0);
       if (sinJugadores) throw new ErrorApi(`${sinJugadores.nombre} no tiene jugadores.`);
-      this.vivo.iniciar({ fecha: this.fecha || null, lugar: this.lugar.trim() || null, local: l, visitante: v });
+      const duracion = Math.round(this.duracionCuartoMin);
+      if (!(duracion >= 1 && duracion <= 20)) throw new ErrorApi('Los cuartos tienen que durar entre 1 y 20 minutos.');
+      await this.vivo.iniciar({
+        fecha: this.fecha || null,
+        lugar: this.lugar.trim() || null,
+        duracionCuartoMin: duracion,
+        local: l,
+        visitante: v,
+      });
       this.router.navigate(['/partidos/en-vivo']);
     });
   }
 
-  private async equipoEnVivo(id: number): Promise<EquipoEnVivo> {
-    const equipo = this.equipos.value()?.find((e) => e.id === id) as Equipo;
+  protected retomar(p: PartidoEnCurso) {
+    return this.ejecutar(async () => {
+      const [jugadas, local, visitante] = await Promise.all([
+        this.partidos.jugadas(p.id),
+        this.equipoEnVivo(p.equipoLocalId, p.local),
+        this.equipoEnVivo(p.equipoVisitanteId, p.visitante),
+      ]);
+      this.vivo.retomar({
+        partidoId: p.id,
+        fecha: p.fecha,
+        lugar: p.lugar,
+        duracionCuartoMin: p.duracionCuartoMin,
+        local,
+        visitante,
+        jugadas,
+      });
+      this.router.navigate(['/partidos/en-vivo']);
+    });
+  }
+
+  private async equipoEnVivo(id: number, nombre?: string): Promise<EquipoEnVivo> {
+    const equipo = this.equipos.value()?.find((e) => e.id === id) ?? ({ nombre, escudo: null } as Equipo);
     const jugadores = await this.jugadores.porEquipo(id);
     return {
       id,
@@ -114,7 +169,6 @@ export default class NuevoPartido {
       jugadores: jugadores
         .map((j) => ({ id: j.id, nombre: j.nombre, numero: j.numero }))
         .sort((a, b) => a.numero - b.numero),
-      enCancha: [],
     };
   }
 
