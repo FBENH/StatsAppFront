@@ -1,7 +1,7 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
-import { Api } from './api';
-import { Accion, aplicar, contadoresEnCero } from './estadisticas';
-import { Contadores } from './modelos';
+import { Api, ErrorApi } from './api';
+import { Accion } from './estadisticas';
+import { calcular, duracionCuarto, Jugada, jugadaDeAccion } from './registro';
 
 export interface JugadorEnVivo {
   id: number;
@@ -14,49 +14,59 @@ export interface EquipoEnVivo {
   nombre: string;
   escudo: string | null;
   jugadores: JugadorEnVivo[];
-  /** Ids de los jugadores en cancha. */
-  enCancha: number[];
 }
 
-export interface PlanillaJugador extends Contadores {
-  equipoId: number;
-  msJugados: number;
-}
+/** Algo que todavía no llegó a la API. */
+export type Operacion = { tipo: 'alta'; jugada: Jugada } | { tipo: 'baja'; id: string };
 
 export interface EstadoPartido {
+  partidoId: number;
   fecha: string | null;
   lugar: string | null;
+  duracionCuartoMin: number;
   local: EquipoEnVivo;
   visitante: EquipoEnVivo;
-  jugadores: Record<number, PlanillaJugador>;
-  equipos: Record<number, Contadores>;
+  jugadas: Jugada[];
+  pendientes: Operacion[];
+  cuarto: number;
   reloj: {
-    duracionMs: number;
-    /** Tiempo que quedaba la última vez que se paró o se acumuló. */
+    /** Tiempo que quedaba la última vez que se paró. */
     restanteMs: number;
     /** Momento (Date.now) en que arrancó; null si está parado. */
     corriendoDesde: number | null;
   };
 }
 
+export type Conexion = 'ok' | 'enviando' | 'sin-conexion';
+
 export const MAX_EN_CANCHA = 5;
-const CLAVE = 'statsapp.partidoEnVivo';
-const MAX_DESHACER = 100;
-const DURACION_CUARTO = 10 * 60 * 1000;
+const CLAVE = 'statsapp.partidoEnVivo.v2';
+const REINTENTO_MS = 5000;
 
 /**
- * Estado del partido que se está anotando. Se guarda en localStorage en cada cambio,
- * así que una recarga de la página no pierde nada.
+ * Partido que se está anotando. Cada jugada se guarda en el dispositivo y se manda a la API
+ * apenas se carga; si no hay conexión queda en una cola y se reintenta.
  * Las funciones que dependen de la hora reciben `ahora` para poder probarlas.
  */
 @Injectable({ providedIn: 'root' })
 export class PartidoEnVivo {
   private readonly api = inject(Api);
-  private readonly historial: EstadoPartido[] = [];
+  private envio: Promise<void> | null = null;
+  private reintento: ReturnType<typeof setTimeout> | null = null;
 
   readonly estado = signal<EstadoPartido | null>(leer());
-  readonly puedeDeshacer = signal(false);
+  readonly conexion = signal<Conexion>('ok');
+  /** Última jugada que la API rechazó (por ejemplo, datos inválidos). */
+  readonly rechazo = signal<string | null>(null);
 
+  readonly pendientes = computed(() => this.estado()?.pendientes.length ?? 0);
+  readonly puedeDeshacer = computed(() => (this.estado()?.jugadas.length ?? 0) > 0);
+  /** Planilla sin minutos en curso; para minutos al día usar planilla(ahora). */
+  private readonly planillaBase = computed(() => {
+    const e = this.estado();
+    return e ? calcular(datosPartido(e), e.jugadas) : null;
+  });
+  readonly enCancha = computed(() => this.planillaBase()?.enCancha ?? {});
   readonly puntosLocal = computed(() => this.puntos(this.estado()?.local.id));
   readonly puntosVisitante = computed(() => this.puntos(this.estado()?.visitante.id));
 
@@ -66,62 +76,108 @@ export class PartidoEnVivo {
       if (estado) localStorage.setItem(CLAVE, JSON.stringify(estado));
       else localStorage.removeItem(CLAVE);
     });
+    if (typeof window !== 'undefined') window.addEventListener('online', () => this.sincronizar());
+    if (this.pendientes() > 0) this.sincronizar();
   }
 
-  iniciar(datos: { fecha: string | null; lugar: string | null; local: EquipoEnVivo; visitante: EquipoEnVivo }) {
-    const jugadores: Record<number, PlanillaJugador> = {};
-    for (const equipo of [datos.local, datos.visitante]) {
-      for (const j of equipo.jugadores) jugadores[j.id] = { ...contadoresEnCero(), equipoId: equipo.id, msJugados: 0 };
-    }
-    this.historial.length = 0;
-    this.puedeDeshacer.set(false);
+  /** Crea el partido en la API y empieza a anotarlo en este dispositivo. */
+  async iniciar(datos: {
+    fecha: string | null;
+    lugar: string | null;
+    duracionCuartoMin?: number;
+    local: EquipoEnVivo;
+    visitante: EquipoEnVivo;
+  }) {
+    const duracionCuartoMin = datos.duracionCuartoMin ?? 10;
+    const partidoId = await this.api.post<number>('/Partido/Iniciar', {
+      equipoLocal: datos.local.id,
+      equipoVisitante: datos.visitante.id,
+      fecha: datos.fecha,
+      lugar: datos.lugar,
+      duracionCuartoMin,
+    });
     this.estado.set({
       ...datos,
-      jugadores,
-      equipos: { [datos.local.id]: contadoresEnCero(), [datos.visitante.id]: contadoresEnCero() },
-      reloj: { duracionMs: DURACION_CUARTO, restanteMs: DURACION_CUARTO, corriendoDesde: null },
+      partidoId,
+      duracionCuartoMin,
+      jugadas: [],
+      pendientes: [],
+      cuarto: 1,
+      reloj: { restanteMs: duracionCuarto(1, duracionCuartoMin), corriendoDesde: null },
     });
   }
 
-  descartar() {
+  /** Sigue en este dispositivo un partido que se empezó en otro (o antes de perder los datos locales). */
+  retomar(datos: Omit<EstadoPartido, 'pendientes' | 'cuarto' | 'reloj'>) {
+    const ultima = datos.jugadas.at(-1);
+    const cuarto = ultima?.cuarto ?? 1;
+    this.estado.set({
+      ...datos,
+      pendientes: [],
+      cuarto,
+      reloj: {
+        restanteMs: ultima?.relojMs ?? duracionCuarto(cuarto, datos.duracionCuartoMin),
+        corriendoDesde: null,
+      },
+    });
+  }
+
+  /** Olvida el partido en este dispositivo y lo da de baja en la API. */
+  async descartar() {
+    const id = this.estado()?.partidoId;
     this.estado.set(null);
+    if (id) await this.api.delete('/Partido/Eliminar', { id }).catch(() => undefined);
   }
 
-  /** Suma una jugada al jugador y a su equipo. */
-  registrar(jugadorId: number, accion: Accion) {
-    this.modificar((e) => {
-      const planilla = e.jugadores[jugadorId];
-      aplicar(planilla, accion);
-      aplicar(e.equipos[planilla.equipoId], accion);
-    });
+  /** Registra una jugada de un jugador (o del equipo si jugadorId es null). */
+  registrar(jugadorId: number | null, accion: Accion, equipoId?: number, ahora = Date.now()) {
+    const e = this.estado();
+    if (!e) return;
+    const equipo = equipoId ?? (jugadorId === null ? null : equipoDe(e, jugadorId));
+    if (equipo === null) return;
+    this.agregar([{ ...jugadaDeAccion(accion), equipoId: equipo, jugadorId }], ahora);
   }
 
-  /** Corrige a mano los puntos de un equipo (no cambia los de los jugadores). */
-  corregirPuntos(equipoId: number, puntos: number) {
-    this.modificar((e) => (e.equipos[equipoId].puntos = Math.max(0, Math.round(puntos))));
-  }
-
-  /** Cambia los jugadores en cancha de un equipo. Los minutos se acumulan antes del cambio. */
+  /** Cambia los jugadores en cancha de un equipo: genera una jugada por cada uno que entra o sale. */
   cambiar(equipoId: number, enCancha: number[], ahora = Date.now()) {
-    this.modificar((e) => {
-      acumular(e, ahora);
-      const equipo = e.local.id === equipoId ? e.local : e.visitante;
-      equipo.enCancha = enCancha.slice(0, MAX_EN_CANCHA);
-    });
+    const actuales = this.enCancha()[equipoId] ?? [];
+    const nuevos = enCancha.slice(0, MAX_EN_CANCHA);
+    const salen = actuales.filter((id) => !nuevos.includes(id));
+    const entran = nuevos.filter((id) => !actuales.includes(id));
+    const cambios = Array.from({ length: Math.max(salen.length, entran.length) }, (_, i) => ({
+      tipo: 'Cambio' as const,
+      equipoId,
+      jugadorId: entran[i] ?? null,
+      saleId: salen[i] ?? null,
+    }));
+    this.agregar(cambios, ahora);
   }
 
+  /** Borra la última jugada. Un cambio de varios jugadores se deshace entero. */
   deshacer() {
-    const anterior = this.historial.pop();
-    if (!anterior) return;
-    // El reloj y los minutos jugados no vuelven atrás: solo se deshacen jugadas, cambios y correcciones.
-    const actual = this.estado()!;
-    const restaurado = structuredClone(anterior);
-    restaurado.reloj = actual.reloj;
-    for (const id of Object.keys(restaurado.jugadores)) {
-      restaurado.jugadores[+id].msJugados = actual.jugadores[+id].msJugados;
+    const e = this.estado();
+    const ultima = e?.jugadas.at(-1);
+    if (!e || !ultima) return;
+    const raiz = ultima.tipo === 'Cambio' ? (ultima.relacionadaId ?? ultima.id) : ultima.id;
+    const borrar = new Set(
+      e.jugadas.filter((j) => j.id === raiz || (j.tipo === 'Cambio' && j.relacionadaId === raiz)).map((j) => j.id),
+    );
+    let pendientes = e.pendientes;
+    for (const id of borrar) {
+      // Si todavía no se mandó, alcanza con sacarla de la cola.
+      const enCola = pendientes.some((o) => o.tipo === 'alta' && o.jugada.id === id);
+      pendientes = enCola
+        ? pendientes.filter((o) => !(o.tipo === 'alta' && o.jugada.id === id))
+        : [...pendientes, { tipo: 'baja', id }];
     }
-    this.estado.set(restaurado);
-    this.puedeDeshacer.set(this.historial.length > 0);
+    this.estado.set({ ...e, jugadas: e.jugadas.filter((j) => !borrar.has(j.id)), pendientes });
+    this.enviarSiHayConexion();
+  }
+
+  /** Planilla con los minutos de los que están en cancha al día. */
+  planilla(ahora = Date.now()) {
+    const e = this.estado();
+    return e ? calcular(datosPartido(e), e.jugadas, { cuarto: e.cuarto, relojMs: this.restante(ahora) }) : null;
   }
 
   // Reloj
@@ -138,16 +194,14 @@ export class PartidoEnVivo {
   }
 
   arrancar(ahora = Date.now()) {
-    this.actualizarReloj((e) => {
+    this.actualizar((e) => {
       if (e.reloj.corriendoDesde === null && e.reloj.restanteMs > 0) e.reloj.corriendoDesde = ahora;
     });
   }
 
   parar(ahora = Date.now()) {
-    this.actualizarReloj((e) => {
-      acumular(e, ahora);
-      e.reloj.corriendoDesde = null;
-    });
+    const restante = this.restante(ahora);
+    this.actualizar((e) => (e.reloj = { restanteMs: restante, corriendoDesde: null }));
   }
 
   /** Lo llama la pantalla periódicamente: para el reloj cuando llega a cero. */
@@ -155,63 +209,103 @@ export class PartidoEnVivo {
     if (this.corriendo() && this.restante(ahora) === 0) this.parar(ahora);
   }
 
-  /** Pone el reloj en un valor (parado). Sin argumento, vuelve a la duración del cuarto. */
-  fijarReloj(ms?: number, ahora = Date.now()) {
-    this.actualizarReloj((e) => {
-      acumular(e, ahora);
-      e.reloj.corriendoDesde = null;
-      e.reloj.restanteMs = Math.max(0, ms ?? e.reloj.duracionMs);
+  /** Pone el reloj en un valor, parado. */
+  fijarReloj(ms: number) {
+    this.actualizar((e) => (e.reloj = { restanteMs: Math.max(0, ms), corriendoDesde: null }));
+  }
+
+  /** Pasa al cuarto siguiente (del 5 en adelante son prórrogas de 5 minutos). */
+  siguienteCuarto() {
+    this.actualizar((e) => {
+      e.cuarto++;
+      e.reloj = { restanteMs: duracionCuarto(e.cuarto, e.duracionCuartoMin), corriendoDesde: null };
     });
   }
 
-  /** Arma el pedido para Partido/Crear, sin enviarlo. */
-  pedido(ahora = Date.now()) {
-    const e = structuredClone(this.estado()!);
-    acumular(e, ahora);
-    const pl = e.equipos[e.local.id].puntos;
-    const pv = e.equipos[e.visitante.id].puntos;
-    return {
-      partido: {
-        equipoLocal: e.local.id,
-        equipoVisitante: e.visitante.id,
-        ganador: pl > pv ? e.local.id : pv > pl ? e.visitante.id : null,
-        fecha: e.fecha,
-        lugar: e.lugar,
-      },
-      statJ: Object.entries(e.jugadores).map(([id, { msJugados, ...planilla }]) => ({
-        ...planilla,
-        jugadorId: Number(id),
-        minutos: Math.round(msJugados),
-      })),
-      statP: [e.local.id, e.visitante.id].map((id) => ({ ...e.equipos[id], equipoId: id })),
-    };
+  /** Manda lo pendiente y termina el partido en la API. Devuelve el id. */
+  async finalizar(ahora = Date.now()) {
+    await this.sincronizar();
+    const e = this.estado()!;
+    if (e.pendientes.length > 0) {
+      throw new ErrorApi('Hay jugadas sin enviar. Revisá la conexión y probá de nuevo.', 0);
+    }
+    await this.api.post('/Partido/Finalizar?id=' + e.partidoId, { cuarto: e.cuarto, relojMs: this.restante(ahora) });
+    this.estado.set(null);
+    return e.partidoId;
   }
 
-  /** Guarda el partido en la API y lo borra de este dispositivo. Devuelve el id. */
-  async finalizar() {
-    const id = await this.api.post<number>('/Partido/Crear', this.pedido());
-    this.descartar();
-    return id;
+  /** Manda la cola de pendientes en orden. Si no hay conexión, reintenta más tarde. */
+  sincronizar(): Promise<void> {
+    this.envio ??= this.enviar().finally(() => (this.envio = null));
+    return this.envio;
+  }
+
+  // Sin conexión no se intenta en cada jugada: espera al reintento programado o al evento 'online'.
+  private enviarSiHayConexion() {
+    if (this.conexion() !== 'sin-conexion') this.sincronizar();
+  }
+
+  private async enviar() {
+    if (this.reintento) clearTimeout(this.reintento);
+    this.reintento = null;
+    while (true) {
+      const e = this.estado();
+      if (!e || e.pendientes.length === 0) {
+        this.conexion.set('ok');
+        return;
+      }
+      // Las altas seguidas van en un solo pedido.
+      const primera = e.pendientes[0];
+      const lote = primera.tipo === 'alta' ? tomarAltas(e.pendientes) : [primera];
+      this.conexion.set('enviando');
+      try {
+        if (primera.tipo === 'alta') {
+          await this.api.post(`/Partido/Jugadas?partidoId=${e.partidoId}`, lote.map((o) => (o as { jugada: Jugada }).jugada));
+        } else {
+          await this.api.delete('/Partido/Jugadas', { partidoId: e.partidoId, id: primera.id });
+        }
+      } catch (error) {
+        if (error instanceof ErrorApi && !error.reintentable) {
+          // La API no la acepta: reintentar no sirve. Se saca de la cola y se avisa.
+          this.rechazo.set(error.message);
+        } else {
+          this.conexion.set('sin-conexion');
+          this.reintento = setTimeout(() => this.sincronizar(), REINTENTO_MS);
+          return;
+        }
+      }
+      // La cola pudo cambiar mientras se enviaba: se sacan solo las operaciones enviadas.
+      const enviadas = new Set(lote.map(clave));
+      this.estado.update((actual) => actual && { ...actual, pendientes: actual.pendientes.filter((o) => !enviadas.has(clave(o))) });
+    }
+  }
+
+  private agregar(jugadas: Omit<Jugada, 'id' | 'numero' | 'cuarto' | 'relojMs'>[], ahora: number) {
+    const e = this.estado();
+    if (!e || jugadas.length === 0) return;
+    let numero = (e.jugadas.at(-1)?.numero ?? 0) + 1;
+    const relojMs = this.restante(ahora);
+    const nuevas: Jugada[] = [];
+    for (const j of jugadas) {
+      const id = crypto.randomUUID();
+      // Los cambios hechos juntos quedan relacionados con el primero, para deshacerlos juntos.
+      const relacionadaId = j.tipo === 'Cambio' && nuevas.length > 0 ? nuevas[0].id : (j.relacionadaId ?? null);
+      nuevas.push({ ...j, id, numero: numero++, cuarto: e.cuarto, relojMs, relacionadaId });
+    }
+    this.estado.set({
+      ...e,
+      jugadas: [...e.jugadas, ...nuevas],
+      pendientes: [...e.pendientes, ...nuevas.map((jugada) => ({ tipo: 'alta' as const, jugada }))],
+    });
+    this.enviarSiHayConexion();
   }
 
   private puntos(equipoId: number | undefined) {
-    return equipoId === undefined ? 0 : (this.estado()?.equipos[equipoId]?.puntos ?? 0);
+    return equipoId === undefined ? 0 : (this.planillaBase()?.equipos[equipoId]?.puntos ?? 0);
   }
 
-  // Cambio que se puede deshacer.
-  private modificar(cambio: (e: EstadoPartido) => void) {
-    const actual = this.estado();
-    if (!actual) return;
-    this.historial.push(actual);
-    if (this.historial.length > MAX_DESHACER) this.historial.shift();
-    this.puedeDeshacer.set(true);
-    const nuevo = structuredClone(actual);
-    cambio(nuevo);
-    this.estado.set(nuevo);
-  }
-
-  // Cambio del reloj, que no entra en el historial.
-  private actualizarReloj(cambio: (e: EstadoPartido) => void) {
+  // Cambio que no va a la API (reloj y cuarto).
+  private actualizar(cambio: (e: EstadoPartido) => void) {
     const actual = this.estado();
     if (!actual) return;
     const nuevo = structuredClone(actual);
@@ -220,18 +314,29 @@ export class PartidoEnVivo {
   }
 }
 
-// Descuenta del reloj lo corrido desde la última vez y se lo suma a los jugadores en cancha.
-function acumular(e: EstadoPartido, ahora: number) {
-  const { reloj } = e;
-  if (reloj.corriendoDesde === null) return;
-  const corrido = Math.min(Math.max(0, ahora - reloj.corriendoDesde), reloj.restanteMs);
-  reloj.restanteMs -= corrido;
-  reloj.corriendoDesde = ahora;
-  for (const id of [...e.local.enCancha, ...e.visitante.enCancha]) e.jugadores[id].msJugados += corrido;
+const datosPartido = (e: EstadoPartido) => ({
+  localId: e.local.id,
+  visitanteId: e.visitante.id,
+  duracionCuartoMin: e.duracionCuartoMin,
+});
+
+const equipoDe = (e: EstadoPartido, jugadorId: number) =>
+  e.local.jugadores.some((j) => j.id === jugadorId) ? e.local.id : e.visitante.id;
+
+const clave = (o: Operacion) => (o.tipo === 'alta' ? 'alta:' + o.jugada.id : 'baja:' + o.id);
+
+function tomarAltas(pendientes: Operacion[]) {
+  const lote: Operacion[] = [];
+  for (const o of pendientes) {
+    if (o.tipo !== 'alta' || lote.length >= 200) break;
+    lote.push(o);
+  }
+  return lote;
 }
 
 function leer(): EstadoPartido | null {
   try {
+    localStorage.removeItem('statsapp.partidoEnVivo');
     return JSON.parse(localStorage.getItem(CLAVE) ?? 'null');
   } catch {
     return null;

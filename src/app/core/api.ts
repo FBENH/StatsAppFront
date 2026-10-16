@@ -7,7 +7,17 @@ import { Respuesta } from './modelos';
 export const url = (ruta: string) => environment.apiUrl + ruta;
 
 /** Error con el mensaje que manda la API, para mostrarlo tal cual. */
-export class ErrorApi extends Error {}
+export class ErrorApi extends Error {
+  /** Código HTTP; 0 si no hubo respuesta (sin conexión). */
+  constructor(mensaje: string, readonly estado = 400) {
+    super(mensaje);
+  }
+
+  /** Vale la pena reintentar: no hubo conexión o falló el servidor. */
+  get reintentable() {
+    return this.estado === 0 || this.estado >= 500;
+  }
+}
 
 // Envoltorio fino sobre HttpClient: devuelve data o lanza ErrorApi si exito es 0.
 @Injectable({ providedIn: 'root' })
@@ -35,8 +45,8 @@ export class Api {
     try {
       respuesta = await pedido;
     } catch (e: unknown) {
-      const mensaje = (e as { error?: { mensaje?: string } }).error?.mensaje;
-      throw new ErrorApi(mensaje ?? 'No se pudo conectar con el servidor.');
+      const { error, status } = e as { error?: { mensaje?: string }; status?: number };
+      throw new ErrorApi(error?.mensaje ?? 'No se pudo conectar con el servidor.', status ?? 0);
     }
     if (respuesta.exito !== 1) throw new ErrorApi(respuesta.mensaje ?? 'No se encontró lo que buscabas.');
     return respuesta.data;

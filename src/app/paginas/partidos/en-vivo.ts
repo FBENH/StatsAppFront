@@ -1,7 +1,7 @@
 import { Component, computed, DestroyRef, effect, inject, signal, viewChild, ElementRef } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { mensajeDeError } from '../../core/api';
-import { Accion, ACCIONES, formatearReloj } from '../../core/estadisticas';
+import { Accion, ACCIONES, contadoresEnCero, formatearReloj } from '../../core/estadisticas';
 import { EquipoEnVivo, MAX_EN_CANCHA, PartidoEnVivo } from '../../core/partido-en-vivo';
 import { FilaPlanilla, Planilla } from '../../compartido/planilla';
 
@@ -16,6 +16,7 @@ import { FilaPlanilla, Planilla } from '../../compartido/planilla';
             <span class="puntos">{{ vivo.puntosLocal() }}</span>
           </div>
           <div class="reloj">
+            <span class="suave cuarto">{{ nombreCuarto(e.cuarto) }}</span>
             <span class="tiempo" [class.parado]="!vivo.corriendo()">{{ reloj() }}</span>
             <div class="fila">
               @if (vivo.corriendo()) {
@@ -24,7 +25,7 @@ import { FilaPlanilla, Planilla } from '../../compartido/planilla';
                 <button class="boton chico primario" type="button" (click)="vivo.arrancar()">Seguir</button>
               }
               <button class="boton chico" type="button" (click)="editarReloj()">Editar</button>
-              <button class="boton chico" type="button" (click)="vivo.fijarReloj()" title="Volver a 10:00">Nuevo cuarto</button>
+              <button class="boton chico" type="button" (click)="siguienteCuarto()">Siguiente cuarto</button>
             </div>
           </div>
           <div class="lado">
@@ -36,18 +37,25 @@ import { FilaPlanilla, Planilla } from '../../compartido/planilla';
         <div class="fila acciones-generales">
           <button class="boton" type="button" (click)="abrirCambios()">Cambios</button>
           <button class="boton" type="button" (click)="vivo.deshacer()" [disabled]="!vivo.puedeDeshacer()">Deshacer</button>
-          <button class="boton" type="button" (click)="corregir()">Corregir puntos</button>
           <span class="separador"></span>
           <button class="boton primario" type="button" (click)="finalizar()" [disabled]="guardando()">Terminar partido</button>
           <button class="boton peligro" type="button" (click)="descartar()">Descartar</button>
         </div>
+        <p class="sincronizacion" [class.alerta]="vivo.conexion() === 'sin-conexion'" role="status">
+          @switch (vivo.conexion()) {
+            @case ('sin-conexion') { Sin conexión: {{ vivo.pendientes() }} jugadas guardadas en este dispositivo, se envían cuando vuelva. }
+            @case ('enviando') { Guardando… }
+            @default { ● Guardado }
+          }
+        </p>
+        @if (vivo.rechazo(); as r) { <p class="error" role="alert">Una jugada no se pudo guardar: {{ r }}</p> }
         @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
 
         <div class="dos-columnas">
           @for (equipo of [e.local, e.visitante]; track equipo.id) {
             <div class="tarjeta">
               <h2>{{ equipo.nombre }}</h2>
-              @if (equipo.enCancha.length === 0) {
+              @if (enCancha(equipo).length === 0) {
                 <p class="suave">No hay nadie en cancha. Usá "Cambios" para elegir quién juega.</p>
               }
               <div class="en-cancha">
@@ -56,7 +64,7 @@ import { FilaPlanilla, Planilla } from '../../compartido/planilla';
                     [attr.aria-pressed]="elegido() === j.id">
                     <span class="numero">{{ j.numero }}</span>
                     <span class="nombre-jugador">{{ j.nombre }}</span>
-                    <span class="suave detalle">{{ e.jugadores[j.id].puntos }} pts · {{ e.jugadores[j.id].faltas }} f</span>
+                    <span class="suave detalle">{{ planilla()?.jugadores?.[j.id]?.puntos ?? 0 }} pts · {{ planilla()?.jugadores?.[j.id]?.faltas ?? 0 }} f</span>
                   </button>
                 }
               </div>
@@ -118,6 +126,9 @@ import { FilaPlanilla, Planilla } from '../../compartido/planilla';
   `,
   styles: `
     h2 { margin: 1.25rem 0 0.5rem; }
+    .cuarto { font-size: 0.85rem; }
+    .sincronizacion { margin: -0.5rem 0 1rem; font-size: 0.85rem; color: var(--exito); }
+    .sincronizacion.alerta { color: var(--peligro); font-weight: 600; }
     .tarjeta h2 { margin-top: 0; }
     .marcador { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; text-align: center; }
     .lado { display: grid; gap: 0.25rem; }
@@ -184,19 +195,27 @@ export default class EnVivo {
     return j ? `#${j.numero} ${j.nombre}` : '';
   });
 
+  // Planilla con minutos al día; se recalcula con cada tic del reloj.
+  protected readonly planilla = computed(() => {
+    this.vivo.estado();
+    return this.vivo.planilla(this.ahora());
+  });
+
   protected readonly planillas = computed(() => {
     const e = this.vivo.estado();
-    if (!e) return [];
+    const p = this.planilla();
+    if (!e || !p) return [];
     return [e.local, e.visitante].map((equipo) => ({
       equipo: equipo.nombre,
-      total: e.equipos[equipo.id],
-      filas: equipo.jugadores.map(
-        (j): FilaPlanilla => ({
-          ...e.jugadores[j.id],
-          titulo: `#${j.numero} ${j.nombre}${equipo.enCancha.includes(j.id) ? ' •' : ''}`,
-          minutos: aHoras(e.jugadores[j.id].msJugados),
-        }),
-      ),
+      total: p.equipos[equipo.id],
+      filas: equipo.jugadores.map((j): FilaPlanilla => {
+        const fila = p.jugadores[j.id] ?? { ...contadoresEnCero(), msJugados: 0 };
+        return {
+          ...fila,
+          titulo: `#${j.numero} ${j.nombre}${p.enCancha[equipo.id]?.includes(j.id) ? ' •' : ''}`,
+          minutos: aHoras(fila.msJugados),
+        };
+      }),
     }));
   });
 
@@ -211,14 +230,16 @@ export default class EnVivo {
     effect(() => {
       const e = this.vivo.estado();
       const dialogo = this.dialogoCambios();
-      if (e && dialogo && !this.cambiosAbiertos() && e.local.enCancha.length + e.visitante.enCancha.length === 0) {
+      const enCancha = this.vivo.enCancha();
+      if (e && dialogo && !this.cambiosAbiertos() && Object.values(enCancha).flat().length === 0) {
         this.abrirCambios();
       }
     });
   }
 
   protected enCancha(equipo: EquipoEnVivo) {
-    return equipo.jugadores.filter((j) => equipo.enCancha.includes(j.id));
+    const ids = this.vivo.enCancha()[equipo.id] ?? [];
+    return equipo.jugadores.filter((j) => ids.includes(j.id));
   }
 
   protected elegir(id: number) {
@@ -235,7 +256,8 @@ export default class EnVivo {
   protected abrirCambios() {
     const e = this.vivo.estado();
     if (!e) return;
-    this.borrador.set({ [e.local.id]: [...e.local.enCancha], [e.visitante.id]: [...e.visitante.enCancha] });
+    const enCancha = this.vivo.enCancha();
+    this.borrador.set({ [e.local.id]: [...(enCancha[e.local.id] ?? [])], [e.visitante.id]: [...(enCancha[e.visitante.id] ?? [])] });
     this.cambiosAbiertos.set(true);
     this.dialogoCambios()?.nativeElement.showModal();
   }
@@ -255,7 +277,7 @@ export default class EnVivo {
     if (!e) return;
     const b = this.borrador();
     for (const equipo of [e.local, e.visitante]) {
-      if (!mismos(equipo.enCancha, b[equipo.id])) this.vivo.cambiar(equipo.id, b[equipo.id]);
+      if (!mismos(this.vivo.enCancha()[equipo.id] ?? [], b[equipo.id])) this.vivo.cambiar(equipo.id, b[equipo.id]);
     }
     const elegido = this.elegido();
     if (elegido !== null && !Object.values(b).flat().includes(elegido)) this.elegido.set(null);
@@ -271,17 +293,14 @@ export default class EnVivo {
     this.vivo.fijarReloj((Number(partes[1]) * 60 + Number(partes[2] ?? 0)) * 1000);
   }
 
-  protected corregir() {
+  protected siguienteCuarto() {
     const e = this.vivo.estado();
-    if (!e) return;
-    for (const equipo of [e.local, e.visitante]) {
-      const texto = prompt(`Puntos de ${equipo.nombre}`, String(e.equipos[equipo.id].puntos));
-      if (texto === null) return;
-      const puntos = Number(texto);
-      if (!Number.isInteger(puntos) || puntos < 0) return this.error.set('Los puntos tienen que ser un entero positivo.');
-      if (puntos !== e.equipos[equipo.id].puntos) this.vivo.corregirPuntos(equipo.id, puntos);
-    }
-    this.error.set(null);
+    if (!e || !confirm(`¿Terminar el ${this.nombreCuarto(e.cuarto)} y pasar al siguiente?`)) return;
+    this.vivo.siguienteCuarto();
+  }
+
+  protected nombreCuarto(cuarto: number) {
+    return cuarto <= 4 ? `${cuarto}.º cuarto` : `prórroga ${cuarto - 4}`;
   }
 
   protected async finalizar() {

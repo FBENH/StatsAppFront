@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Api, ErrorApi, url } from './api';
+import { Jugada } from './registro';
 import { Equipo, Jugador, JugadorListado, PartidoDetalle, PartidoResumen, Respuesta } from './modelos';
 
 export interface EquipoForm {
@@ -59,6 +60,20 @@ export class Partidos {
   listar = () => this.api.get<PartidoResumen[]>('/Partido/ListarTodos');
   obtener = (id: number) => this.api.get<PartidoDetalle>('/Partido/ConStats', { id });
   eliminar = (id: number) => this.api.delete('/Partido/Eliminar', { id });
+  enCurso = () => this.api.get<PartidoEnCurso[]>('/Partido/EnCurso');
+  jugadas = (partidoId: number) => this.api.get<Jugada[]>('/Partido/Jugadas', { partidoId });
+}
+
+export interface PartidoEnCurso {
+  id: number;
+  local: string;
+  visitante: string;
+  equipoLocalId: number;
+  equipoVisitanteId: number;
+  fecha: string | null;
+  lugar: string | null;
+  duracionCuartoMin: number;
+  jugadas: number;
 }
 
 @Injectable({ providedIn: 'root' })

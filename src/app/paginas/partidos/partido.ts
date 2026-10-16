@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, input, resource, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { BotonEliminar } from '../../compartido/boton-eliminar';
 import { FilaPlanilla, Planilla } from '../../compartido/planilla';
 import { mensajeDeError } from '../../core/api';
@@ -9,7 +9,7 @@ import { Contadores } from '../../core/modelos';
 import { Partidos } from '../../core/servicios';
 
 @Component({
-  imports: [DatePipe, Planilla, BotonEliminar],
+  imports: [DatePipe, Planilla, BotonEliminar, RouterLink],
   template: `
     <section class="contenedor">
       @if (partido.value(); as p) {
@@ -25,6 +25,12 @@ import { Partidos } from '../../core/servicios';
           </div>
         </div>
         <p class="suave centro">{{ p.fecha | date: 'dd/MM/yyyy' }}{{ p.lugar ? ' · ' + p.lugar : '' }}</p>
+        @if (p.estado === 'EnCurso') {
+          <p class="tarjeta centro">
+            Este partido todavía se está anotando; la planilla se completa al terminarlo.
+            <a routerLink="/partidos/nuevo">Seguir anotando</a>
+          </p>
+        }
 
         <h2>Comparación</h2>
         <div class="tabla-envoltorio">
