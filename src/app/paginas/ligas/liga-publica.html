@@ -1,0 +1,142 @@
+<section class="contenedor">
+  @if (liga.value(); as l) {
+    <header class="cabecera">
+      <div>
+        <p class="suave sobre">Liga</p>
+        <h1>{{ l.nombre }}</h1>
+        @if (l.descripcion) { <p class="suave">{{ l.descripcion }}</p> }
+      </div>
+      @if (l.temporadas.length > 1) {
+        <label class="campo">
+          <span>Temporada</span>
+          <select (change)="temporadaId.set(+$any($event.target).value)">
+            @for (t of l.temporadas; track t.id) {
+              <option [value]="t.id" [selected]="t.id === l.temporada.id">{{ t.nombre }}</option>
+            }
+          </select>
+        </label>
+      } @else {
+        <span class="suave">{{ l.temporada.nombre }}</span>
+      }
+    </header>
+
+    @if (enVivo().length > 0) {
+      <div class="en-vivo" aria-live="polite">
+        @for (p of enVivo(); track p.id) {
+          <div class="tarjeta vivo">
+            <span class="insignia">● EN VIVO</span>
+            <span class="equipo">{{ p.local.nombre }}</span>
+            <strong class="tanteador">{{ p.local.puntos }} – {{ p.visitante.puntos }}</strong>
+            <span class="equipo">{{ p.visitante.nombre }}</span>
+          </div>
+        }
+      </div>
+    }
+
+    <div class="mvps">
+      @if (mvp.value(); as m) {
+        @for (x of [
+          { titulo: 'MVP de la semana', datos: m.semana.mvp, detalle: (m.semana.desde | date: 'dd/MM') + ' al ' + (m.semana.hasta | date: 'dd/MM') },
+          { titulo: 'MVP del mes', datos: m.mes.mvp, detalle: (m.mes.desde | date: 'MMMM') },
+          { titulo: 'MVP de la temporada', datos: m.temporada.mvp, detalle: 'mejor promedio de valoración' }
+        ]; track x.titulo) {
+          <div class="tarjeta mvp">
+            <span class="suave">{{ x.titulo }}</span>
+            @if (x.datos; as d) {
+              <strong>{{ nombre(d.jugador) }}</strong>
+              <span class="suave">{{ d.jugador.equipo }} · {{ d.valoracion }} de valoración en {{ d.partidos }} {{ d.partidos === 1 ? 'partido' : 'partidos' }}</span>
+            } @else {
+              <span class="suave">Todavía no hay partidos jugados.</span>
+            }
+            <span class="suave detalle">{{ x.detalle }}</span>
+          </div>
+        }
+      }
+    </div>
+
+    <nav class="pestanias" role="tablist">
+      @for (p of [{ id: 'posiciones', texto: 'Posiciones' }, { id: 'partidos', texto: 'Partidos' }, { id: 'lideres', texto: 'Líderes' }]; track p.id) {
+        <button type="button" role="tab" [attr.aria-selected]="pestania() === p.id" [class.activa]="pestania() === p.id"
+          (click)="pestania.set($any(p.id))">{{ p.texto }}</button>
+      }
+    </nav>
+
+    @switch (pestania()) {
+      @case ('posiciones') {
+        @for (t of posiciones.value() ?? []; track t.division?.id) {
+          @if (t.division) { <h2>{{ t.division.nombre }}</h2> }
+          <div class="tabla-envoltorio">
+            <table class="tabla">
+              <thead>
+                <tr><th>#</th><th class="izq">Equipo</th><th>PJ</th><th>G</th><th>P</th><th>%</th><th>PF</th><th>PC</th><th>Dif</th><th>Pts</th></tr>
+              </thead>
+              <tbody>
+                @for (f of t.filas; track f.equipo.id; let i = $index) {
+                  <tr>
+                    <td>{{ i + 1 }}</td>
+                    <td class="izq">{{ f.equipo.nombre }}</td>
+                    <td>{{ f.jugados }}</td><td>{{ f.ganados }}</td><td>{{ f.perdidos }}</td>
+                    <td>{{ f.porcentaje * 100 | number: '1.0-0' }}</td>
+                    <td>{{ f.puntosAFavor }}</td><td>{{ f.puntosEnContra }}</td>
+                    <td>{{ f.diferencia > 0 ? '+' : '' }}{{ f.diferencia }}</td>
+                    <td><strong>{{ f.puntos }}</strong></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @empty { <p class="vacio">Todavía no hay equipos en la temporada.</p> }
+        <p class="suave nota">2 puntos por partido ganado y 1 por perdido.</p>
+      }
+      @case ('partidos') {
+        @for (j of jornadas(); track j.jornada) {
+          <h2>{{ j.jornada === null ? 'Otros partidos' : 'Fecha ' + j.jornada }}</h2>
+          <div class="partidos">
+            @for (p of j.partidos; track p.id) {
+              <div class="tarjeta partido" [class.jugando]="p.estado === 'EnCurso'">
+                <div class="cruce">
+                  <span [class.gano]="p.estado === 'Finalizado' && p.local.puntos! > p.visitante.puntos!">{{ p.local.nombre }}</span>
+                  @if (p.estado === 'Programado') { <span class="suave">vs</span> }
+                  @else { <strong class="tanteador">{{ p.local.puntos }} – {{ p.visitante.puntos }}</strong> }
+                  <span [class.gano]="p.estado === 'Finalizado' && p.visitante.puntos! > p.local.puntos!">{{ p.visitante.nombre }}</span>
+                </div>
+                <div class="suave pie">
+                  @switch (p.estado) {
+                    @case ('EnCurso') { <span class="insignia">● EN VIVO</span> }
+                    @case ('Programado') { {{ p.fecha ? (p.fecha | date: 'EEE dd/MM') : 'Día a confirmar' }}{{ p.lugar ? ' · ' + p.lugar : '' }} }
+                    @default { Final{{ p.fecha ? ' · ' + (p.fecha | date: 'dd/MM') : '' }} }
+                  }
+                  @if (p.mvp; as m) { <span>MVP: {{ nombre(m.jugador) }} ({{ m.puntos }} pts, {{ m.valoracion }} val.)</span> }
+                </div>
+              </div>
+            }
+          </div>
+        } @empty { <p class="vacio">Todavía no hay fixture.</p> }
+      }
+      @case ('lideres') {
+        @if (lideres.value(); as l) {
+          <p class="suave nota">Promedio por partido. Entran los que jugaron al menos {{ l.minPartidos }} {{ l.minPartidos === 1 ? 'partido' : 'partidos' }}.</p>
+          <div class="lideres">
+            @for (c of l.categorias; track c.clave) {
+              <div class="tarjeta">
+                <h3>{{ c.nombre }}</h3>
+                <ol>
+                  @for (x of c.jugadores.slice(0, 5); track x.jugador.id) {
+                    <li>
+                      <span>{{ nombre(x.jugador) }} <span class="suave">{{ x.jugador.equipo }}</span></span>
+                      <strong>{{ x.promedio | number: '1.1-1' }}</strong>
+                    </li>
+                  } @empty { <li class="suave">Sin datos todavía.</li> }
+                </ol>
+              </div>
+            }
+          </div>
+        }
+      }
+    }
+  } @else if (liga.error()) {
+    <p class="error">No se encontró la liga.</p>
+  } @else {
+    <p class="suave">Cargando…</p>
+  }
+</section>
