@@ -45,6 +45,9 @@ export default class Liga {
   protected edicion = { nombre: '', slug: '', descripcion: '' };
   protected division = '';
   protected fixture = { desde: new Date().toISOString().slice(0, 10), dias: 7, idaYVuelta: false };
+  protected readonly editando = signal<number | null>(null);
+  protected cambios = { localId: 0, visitanteId: 0, fecha: '', lugar: '', jornada: null as number | null };
+  protected segundosSimulacion = 3;
   protected nuevo = { localId: null as number | null, visitanteId: null as number | null, fecha: '', jornada: null as number | null };
 
   constructor() {
@@ -61,6 +64,12 @@ export default class Liga {
 
   protected paginaPublica() {
     return `/liga/${this.liga.value()?.slug}`;
+  }
+
+  /** Código para pegar en otro sitio y mostrar los resultados en vivo. */
+  protected codigoWidget() {
+    const direccion = `${location.origin}/widget/${this.liga.value()?.slug}`;
+    return `<iframe src="${direccion}" title="Resultados en vivo" style="width:100%;max-width:420px;height:320px;border:0"></iframe>`;
   }
 
   protected inscripcion(equipoId: number) {
@@ -156,6 +165,38 @@ export default class Liga {
     return this.ejecutar(async () => {
       await this.partidosServicio.eliminar(p.id);
       return null;
+    });
+  }
+
+  protected editarPartido(p: PartidoDeLiga) {
+    this.cambios = {
+      localId: p.local.id,
+      visitanteId: p.visitante.id,
+      fecha: p.fecha?.slice(0, 10) ?? '',
+      lugar: p.lugar ?? '',
+      jornada: p.jornada,
+    };
+    this.editando.set(p.id);
+  }
+
+  protected guardarPartido() {
+    const id = this.editando();
+    if (id === null) return;
+    const { localId, visitanteId, fecha, lugar, jornada } = this.cambios;
+    return this.ejecutar(async () => {
+      await this.ligas.modificarPartido({ id, localId, visitanteId, fecha: fecha || null, lugar: lugar.trim() || null, jornada });
+      this.editando.set(null);
+      return 'Se guardó el partido.';
+    });
+  }
+
+  /** Juega el partido con datos inventados, para ver la página pública en vivo sin anotar. */
+  protected simular(p: PartidoDeLiga) {
+    return this.ejecutar(async () => {
+      const jugadas = await this.ligas.simular(p.id, this.segundosSimulacion);
+      const minutos = Math.round((jugadas * this.segundosSimulacion) / 60);
+      const duracion = minutos < 1 ? 'en menos de un minuto' : `en unos ${minutos} minutos`;
+      return `Empezó la simulación de ${p.local.nombre} vs ${p.visitante.nombre}: ${jugadas} jugadas, termina ${duracion}.`;
     });
   }
 

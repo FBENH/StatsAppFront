@@ -82,6 +82,17 @@ export class Ligas {
   ) => this.api.post<number[]>('/Liga/Partidos', { temporadaId, partidos });
   generarFixture = (temporadaId: number, desde: string | null, diasEntreFechas: number, idaYVuelta: boolean) =>
     this.api.post<number>('/Liga/GenerarFixture', { temporadaId, desde, diasEntreFechas, idaYVuelta });
+  modificarPartido = (partido: {
+    id: number;
+    localId: number;
+    visitanteId: number;
+    fecha: string | null;
+    lugar: string | null;
+    jornada: number | null;
+  }) => this.api.put<null>('/Liga/Partido', partido);
+  /** Juega un partido simulado, una jugada cada tantos segundos. Devuelve cuántas jugadas tiene. */
+  simular = (partidoId: number, segundosEntreJugadas: number) =>
+    this.api.post<number>(`/Liga/Simular?partidoId=${partidoId}&segundosEntreJugadas=${segundosEntreJugadas}`, null);
 }
 
 // API pública

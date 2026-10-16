@@ -1,3 +1,4 @@
+@if (!esWidget()) {
 <header class="barra">
   <div class="barra-interior">
     <a class="marca" [routerLink]="auth.logueado() ? '/inicio' : '/'">StatsApp</a>
@@ -20,6 +21,7 @@
     }
   </div>
 </header>
-<main>
+}
+<main [class.widget]="esWidget()">
   <router-outlet />
 </main>

@@ -9,6 +9,8 @@ export const routes: Routes = [
   { path: 'ingresar', loadComponent: () => import('./paginas/ingresar'), canActivate: [soloSinSesion], title: 'Ingresar · StatsApp' },
   { path: 'registro', loadComponent: () => import('./paginas/registro'), canActivate: [soloSinSesion], title: 'Crear cuenta · StatsApp' },
   // Página pública de una liga: no pide login.
+  { path: 'liga/:slug/partido/:id', loadComponent: () => import('./paginas/ligas/partido-vivo'), title: 'Partido en vivo · StatsApp' },
+  { path: 'widget/:slug', loadComponent: () => import('./paginas/ligas/widget'), title: 'Resultados en vivo' },
   { path: 'liga/:slug', loadComponent: () => import('./paginas/ligas/liga-publica'), title: 'Liga · StatsApp' },
   {
     path: '',
