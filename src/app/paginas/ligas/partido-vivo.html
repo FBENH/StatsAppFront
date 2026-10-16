@@ -1,5 +1,5 @@
 <section class="contenedor">
-  @if (detalle.value(); as d) {
+  @if (detalle.hasValue() && detalle.value(); as d) {
     <a class="volver" [routerLink]="['/liga', slug()]">← {{ d.temporada.nombre }}</a>
 
     <div class="tarjeta marcador" [class.en-vivo]="estado() === 'EnCurso'">

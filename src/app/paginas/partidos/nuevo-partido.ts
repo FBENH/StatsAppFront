@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ErrorApi, mensajeDeError } from '../../core/api';
 import { EquipoEnVivo, PartidoEnVivo } from '../../core/partido-en-vivo';
 import { Equipos, Jugadores, PartidoEnCurso, Partidos } from '../../core/servicios';
+import { valor } from '../../core/recurso';
 
 @Component({
   imports: [FormsModule, RouterLink],
@@ -63,7 +64,7 @@ import { Equipos, Jugadores, PartidoEnCurso, Partidos } from '../../core/servici
                   <span>Equipo</span>
                   <select [(ngModel)]="datos[lado.clave].id">
                     <option [ngValue]="null">Elegí un equipo</option>
-                    @for (e of equipos.value(); track e.id) { <option [ngValue]="e.id">{{ e.nombre }}</option> }
+                    @for (e of equipos.hasValue() ? equipos.value() : []; track e.id) { <option [ngValue]="e.id">{{ e.nombre }}</option> }
                   </select>
                 </label>
               }
@@ -121,7 +122,7 @@ export default class NuevoPartido implements OnInit {
   protected readonly equipos = resource({ loader: () => this.equiposServicio.listar() });
   private readonly enCurso = resource({ loader: () => this.partidos.enCurso() });
   protected readonly otrosEnCurso = computed(() =>
-    (this.enCurso.value() ?? []).filter((p) => p.id !== this.vivo.estado()?.partidoId),
+    (valor(this.enCurso) ?? []).filter((p) => p.id !== this.vivo.estado()?.partidoId),
   );
   protected duracionCuartoMin = 10;
   protected datos: Record<Lado, DatosEquipo> = { local: datosVacios(), visitante: datosVacios() };
@@ -137,13 +138,13 @@ export default class NuevoPartido implements OnInit {
   }
 
   protected nombreEquipo(id: number | null) {
-    return this.equipos.value()?.find((e) => e.id === id)?.nombre ?? '…';
+    return valor(this.equipos)?.find((e) => e.id === id)?.nombre ?? '…';
   }
 
   /** Equipo ya cargado con el mismo nombre (sin importar mayúsculas ni tildes). */
   protected parecido(nombre: string) {
     const buscado = normalizar(nombre);
-    return buscado ? (this.equipos.value() ?? []).find((e) => normalizar(e.nombre) === buscado) : undefined;
+    return buscado ? (valor(this.equipos) ?? []).find((e) => normalizar(e.nombre) === buscado) : undefined;
   }
 
   protected usarExistente(lado: Lado, id: number) {
@@ -221,7 +222,7 @@ export default class NuevoPartido implements OnInit {
   private async equipoEnVivo(id: number, nombre?: string): Promise<EquipoEnVivo> {
     const [jugadores, equipo] = await Promise.all([
       this.jugadores.porEquipo(id),
-      this.equipos.value()?.find((e) => e.id === id) ?? (nombre ? { nombre, escudo: null } : this.equiposServicio.obtener(id)),
+      valor(this.equipos)?.find((e) => e.id === id) ?? (nombre ? { nombre, escudo: null } : this.equiposServicio.obtener(id)),
     ]);
     return {
       id,

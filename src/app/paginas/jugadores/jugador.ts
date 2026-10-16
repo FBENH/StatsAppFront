@@ -8,12 +8,13 @@ import { Promedios } from '../../compartido/promedios';
 import { mensajeDeError } from '../../core/api';
 import { Jugadores, Partidos } from '../../core/servicios';
 import JugadorForm from './jugador-form';
+import { valor } from '../../core/recurso';
 
 @Component({
   imports: [RouterLink, Imagen, Promedios, Planilla, BotonEliminar, JugadorForm],
   template: `
     <section class="contenedor">
-      @if (jugador.value(); as j) {
+      @if (jugador.hasValue() && jugador.value(); as j) {
         <div class="tarjeta">
           @if (editando()) {
             <app-jugador-form [jugador]="j" (cerrado)="cerrarEdicion($event)" />
@@ -69,9 +70,9 @@ export default class Jugador {
   private readonly listaPartidos = resource({ loader: () => this.partidos.listar() });
 
   protected readonly filas = computed<FilaPlanilla[]>(() => {
-    const partidos = new Map((this.listaPartidos.value() ?? []).map((p) => [p.id, p]));
+    const partidos = new Map((valor(this.listaPartidos) ?? []).map((p) => [p.id, p]));
     const fecha = new DatePipe('en-US');
-    return (this.jugador.value()?.estadisticasJugador ?? []).map((s) => {
+    return (valor(this.jugador)?.estadisticasJugador ?? []).map((s) => {
       const p = partidos.get(s.partidoId);
       const titulo = p ? `${fecha.transform(p.fecha, 'dd/MM') ?? ''} ${p.local} vs ${p.visitante}`.trim() : 'Partido';
       return { ...s, titulo, enlace: ['/partidos', s.partidoId] };

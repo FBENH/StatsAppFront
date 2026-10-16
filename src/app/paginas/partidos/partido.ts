@@ -10,12 +10,13 @@ import { Cancha, PuntoTiro } from '../../compartido/cancha';
 import { describir, nombreCorto } from '../../core/relato';
 import { Jugada } from '../../core/registro';
 import { Partidos } from '../../core/servicios';
+import { valor } from '../../core/recurso';
 
 @Component({
   imports: [DatePipe, Planilla, BotonEliminar, RouterLink, Cancha],
   template: `
     <section class="contenedor">
-      @if (partido.value(); as p) {
+      @if (partido.hasValue() && partido.value(); as p) {
         <div class="tarjeta marcador">
           <div class="lado">
             <span class="nombre">{{ p.local }}</span>
@@ -132,19 +133,19 @@ export default class Partido {
   protected readonly filtro = signal<number | null>(null);
 
   protected readonly jugadoresOrdenados = computed(() =>
-    [...(this.partido.value()?.jugadores ?? [])].sort((a, b) => a.numero - b.numero),
+    [...(valor(this.partido)?.jugadores ?? [])].sort((a, b) => a.numero - b.numero),
   );
-  protected readonly hayTiros = computed(() => (this.jugadas.value() ?? []).some((j) => j.tipo === 'Tiro' && j.x != null));
+  protected readonly hayTiros = computed(() => (valor(this.jugadas) ?? []).some((j) => j.tipo === 'Tiro' && j.x != null));
 
   protected readonly mapas = computed(() => {
-    const p = this.partido.value();
+    const p = valor(this.partido);
     if (!p) return [];
     const filtro = this.filtro();
     return [
       { equipoId: p.equipoLocalId, nombre: p.local },
       { equipoId: p.equipoVisitanteId, nombre: p.visitante },
     ].map((equipo) => {
-      const tiros: PuntoTiro[] = (this.jugadas.value() ?? [])
+      const tiros: PuntoTiro[] = (valor(this.jugadas) ?? [])
         .filter((j) => j.tipo === 'Tiro' && j.x != null && j.y != null && j.equipoId === equipo.equipoId)
         .filter((j) => filtro === null || j.jugadorId === filtro)
         .map((j) => ({ x: j.x!, y: j.y!, acierto: !!j.acierto, titulo: this.texto(j) }));
@@ -154,11 +155,11 @@ export default class Partido {
 
   /** Cada jugada con el marcador como quedó después. */
   protected readonly relato = computed(() => {
-    const p = this.partido.value();
+    const p = valor(this.partido);
     if (!p) return [];
     let local = 0;
     let visitante = 0;
-    return (this.jugadas.value() ?? [])
+    return (valor(this.jugadas) ?? [])
       .filter((j) => j.tipo !== 'Cambio')
       .map((j) => {
         const puntos = (j.tipo === 'Tiro' || j.tipo === 'Libre') && j.acierto ? (j.tipo === 'Libre' ? 1 : (j.valor ?? 2)) : 0;
@@ -180,7 +181,7 @@ export default class Partido {
   }
 
   private texto(j: Jugada) {
-    const p = this.partido.value()!;
+    const p = valor(this.partido)!;
     return describir(
       j,
       (id) => {
@@ -191,8 +192,8 @@ export default class Partido {
     );
   }
 
-  protected readonly local = computed(() => this.estadisticaDe(this.partido.value()?.equipoLocalId));
-  protected readonly visitante = computed(() => this.estadisticaDe(this.partido.value()?.equipoVisitanteId));
+  protected readonly local = computed(() => this.estadisticaDe(valor(this.partido)?.equipoLocalId));
+  protected readonly visitante = computed(() => this.estadisticaDe(valor(this.partido)?.equipoVisitanteId));
 
   protected readonly comparacion = computed(() => {
     const l = this.local();
@@ -214,7 +215,7 @@ export default class Partido {
   });
 
   protected filas(equipoId: number): FilaPlanilla[] {
-    return (this.partido.value()?.jugadores ?? [])
+    return (valor(this.partido)?.jugadores ?? [])
       .map((j) => ({ j, s: j.estadisticasJugador[0] }))
       .filter(({ s }) => s?.equipoId === equipoId)
       .sort((a, b) => a.j.numero - b.j.numero)
@@ -231,6 +232,6 @@ export default class Partido {
   }
 
   private estadisticaDe(equipoId: number | undefined) {
-    return this.partido.value()?.statPartido.find((s) => s.equipoId === equipoId) ?? null;
+    return valor(this.partido)?.statPartido.find((s) => s.equipoId === equipoId) ?? null;
   }
 }

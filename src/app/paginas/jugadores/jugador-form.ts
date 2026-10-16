@@ -30,7 +30,7 @@ import { Equipos, Jugadores } from '../../core/servicios';
             <span>Equipo</span>
             <select formControlName="equipoId">
               <option [ngValue]="null">Sin equipo</option>
-              @for (e of equipos.value(); track e.id) { <option [ngValue]="e.id">{{ e.nombre }}</option> }
+              @for (e of equipos.hasValue() ? equipos.value() : []; track e.id) { <option [ngValue]="e.id">{{ e.nombre }}</option> }
             </select>
           </label>
         </div>

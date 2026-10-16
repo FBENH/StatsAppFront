@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { EnVivo } from '../../core/en-vivo';
 import { LigasPublicas, PartidoDeLiga, porJornada } from '../../core/ligas';
 import { nombreCorto } from '../../core/relato';
+import { valor } from '../../core/recurso';
 
 type Pestania = 'posiciones' | 'partidos' | 'lideres';
 
@@ -42,8 +43,8 @@ export default class LigaPublica {
     loader: ({ params }) => this.api.mvp(params.slug, params.temporada),
   });
 
-  protected readonly enVivo = computed(() => (this.partidos.value() ?? []).filter((p) => p.estado === 'EnCurso'));
-  protected readonly jornadas = computed(() => porJornada(this.partidos.value() ?? []));
+  protected readonly enVivo = computed(() => (valor(this.partidos) ?? []).filter((p) => p.estado === 'EnCurso'));
+  protected readonly jornadas = computed(() => porJornada(valor(this.partidos) ?? []));
   protected readonly nombre = nombreCorto;
 
   constructor() {
@@ -59,7 +60,7 @@ export default class LigaPublica {
   }
 
   private actualizar(p: PartidoDeLiga) {
-    const anterior = this.partidos.value()?.find((x) => x.id === p.id);
+    const anterior = valor(this.partidos)?.find((x) => x.id === p.id);
     if (!anterior) {
       this.partidos.reload();
       return;

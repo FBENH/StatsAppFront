@@ -8,6 +8,7 @@ import { EstadoPartidoLiga, LigasPublicas } from '../../core/ligas';
 import { calcular, Jugada } from '../../core/registro';
 import { nombreCorto } from '../../core/relato';
 import { parcialActual, relatar } from '../../core/relato-partido';
+import { valor } from '../../core/recurso';
 
 type Pestania = 'relato' | 'planilla';
 
@@ -38,11 +39,11 @@ export default class PartidoVivo {
 
   private readonly nombres = computed(() => {
     const mapa = new Map<number, string>();
-    for (const j of this.detalle.value()?.jugadores ?? []) mapa.set(j.id, nombreCorto(j));
+    for (const j of valor(this.detalle)?.jugadores ?? []) mapa.set(j.id, nombreCorto(j));
     return mapa;
   });
   private readonly datos = computed(() => {
-    const d = this.detalle.value()!;
+    const d = valor(this.detalle)!;
     return {
       localId: d.local.id,
       visitanteId: d.visitante.id,
@@ -52,19 +53,19 @@ export default class PartidoVivo {
   });
 
   private readonly planillaEnVivo = computed(() => {
-    const d = this.detalle.value();
+    const d = valor(this.detalle);
     if (!d || this.jugadas().length === 0) return null;
     return calcular({ localId: d.local.id, visitanteId: d.visitante.id, duracionCuartoMin: d.duracionCuartoMin }, this.jugadas());
   });
   protected readonly puntos = computed(() => {
-    const d = this.detalle.value();
+    const d = valor(this.detalle);
     if (!d) return { local: 0, visitante: 0 };
     const enVivo = this.planillaEnVivo();
     const de = (id: number) => enVivo?.equipos[id]?.puntos ?? d.equipos.find((e) => e.equipoId === id)?.puntos ?? 0;
     return { local: de(d.local.id), visitante: de(d.visitante.id) };
   });
 
-  protected readonly relato = computed(() => (this.detalle.value() ? relatar(this.jugadas(), this.datos()) : []));
+  protected readonly relato = computed(() => (valor(this.detalle) ? relatar(this.jugadas(), this.datos()) : []));
   protected readonly relatoInverso = computed(() => [...this.relato()].reverse());
   protected readonly parcial = computed(() => {
     const p = parcialActual(this.relato());
@@ -109,7 +110,7 @@ export default class PartidoVivo {
   });
 
   protected readonly planillas = computed(() => {
-    const d = this.detalle.value();
+    const d = valor(this.detalle);
     if (!d) return [];
     const enVivo = this.planillaEnVivo();
     const guardada = new Map(d.planilla.map((p) => [p.estadistica.jugadorId, p.estadistica]));
@@ -127,7 +128,7 @@ export default class PartidoVivo {
 
   constructor() {
     effect(() => {
-      const d = this.detalle.value();
+      const d = valor(this.detalle);
       if (!d) return;
       // Pueden haber llegado jugadas por SignalR mientras se cargaba el partido: se juntan por id.
       const llegadas = untracked(this.jugadas).filter((j) => !d.jugadas.some((x) => x.id === j.id));
@@ -162,7 +163,7 @@ export default class PartidoVivo {
   }
 
   protected jugadoresDe(equipoId: number) {
-    return (this.detalle.value()?.jugadores ?? []).filter((j) => j.equipoId === equipoId);
+    return (valor(this.detalle)?.jugadores ?? []).filter((j) => j.equipoId === equipoId);
   }
 
   private recibir(nuevas: Jugada[]) {

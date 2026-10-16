@@ -6,6 +6,7 @@ import { BotonEliminar } from '../../compartido/boton-eliminar';
 import { mensajeDeError } from '../../core/api';
 import { Ligas, PartidoDeLiga, porJornada } from '../../core/ligas';
 import { Equipos, Partidos } from '../../core/servicios';
+import { valor } from '../../core/recurso';
 
 type Borrador = Record<number, { juega: boolean; divisionId: number | null }>;
 
@@ -32,7 +33,7 @@ export default class Liga {
   protected readonly aviso = signal<string | null>(null);
   protected readonly ocupado = signal(false);
 
-  protected readonly temporada = computed(() => this.liga.value()?.temporada);
+  protected readonly temporada = computed(() => valor(this.liga)?.temporada);
   protected readonly jornadas = computed(() => porJornada(this.temporada()?.partidos ?? []));
   protected readonly inscriptos = computed(() => this.temporada()?.equipos ?? []);
   protected readonly nombreDivision = computed(() => {
@@ -53,7 +54,7 @@ export default class Liga {
   constructor() {
     // Cada vez que llega la liga se reinician los formularios con lo guardado.
     effect(() => {
-      const liga = this.liga.value();
+      const liga = valor(this.liga);
       if (!liga) return;
       this.edicion = { nombre: liga.nombre, slug: liga.slug, descripcion: liga.descripcion ?? '' };
       const borrador: Borrador = {};
@@ -63,12 +64,12 @@ export default class Liga {
   }
 
   protected paginaPublica() {
-    return `/liga/${this.liga.value()?.slug}`;
+    return `/liga/${valor(this.liga)?.slug}`;
   }
 
   /** Código para pegar en otro sitio y mostrar los resultados en vivo. */
   protected codigoWidget() {
-    const direccion = `${location.origin}/widget/${this.liga.value()?.slug}`;
+    const direccion = `${location.origin}/widget/${valor(this.liga)?.slug}`;
     return `<iframe src="${direccion}" title="Resultados en vivo" style="width:100%;max-width:420px;height:320px;border:0"></iframe>`;
   }
 

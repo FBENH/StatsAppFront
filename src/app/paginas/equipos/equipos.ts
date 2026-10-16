@@ -11,7 +11,7 @@ import { Equipos as EquiposServicio } from '../../core/servicios';
         <h1>Equipos</h1>
         <a class="boton primario" routerLink="/equipos/nuevo">Nuevo equipo</a>
       </div>
-      @if (equipos.value(); as lista) {
+      @if (equipos.hasValue() && equipos.value(); as lista) {
         <div class="grilla">
           @for (e of lista; track e.id) {
             <a class="tarjeta fila equipo" [routerLink]="['/equipos', e.id]">

@@ -1,5 +1,5 @@
 <section class="contenedor">
-  @if (liga.value(); as l) {
+  @if (liga.hasValue() && liga.value(); as l) {
     <header class="cabecera">
       <div>
         <p class="suave sobre">Liga</p>
@@ -35,7 +35,7 @@
     }
 
     <div class="mvps">
-      @if (mvp.value(); as m) {
+      @if (mvp.hasValue() && mvp.value(); as m) {
         @for (x of [
           { titulo: 'MVP de la semana', datos: m.semana.mvp, detalle: (m.semana.desde | date: 'dd/MM') + ' al ' + (m.semana.hasta | date: 'dd/MM') },
           { titulo: 'MVP del mes', datos: m.mes.mvp, detalle: (m.mes.desde | date: 'MMMM') },
@@ -64,7 +64,7 @@
 
     @switch (pestania()) {
       @case ('posiciones') {
-        @for (t of posiciones.value() ?? []; track t.division?.id) {
+        @for (t of posiciones.hasValue() ? posiciones.value() : []; track t.division?.id) {
           @if (t.division) { <h2>{{ t.division.nombre }}</h2> }
           <div class="tabla-envoltorio">
             <table class="tabla">
@@ -116,7 +116,7 @@
         } @empty { <p class="vacio">Todavía no hay fixture.</p> }
       }
       @case ('lideres') {
-        @if (lideres.value(); as l) {
+        @if (lideres.hasValue() && lideres.value(); as l) {
           <p class="suave nota">Promedio por partido. Entran los que jugaron al menos {{ l.minPartidos }} {{ l.minPartidos === 1 ? 'partido' : 'partidos' }}.</p>
           <div class="lideres">
             @for (c of l.categorias; track c.clave) {

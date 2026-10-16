@@ -1,5 +1,5 @@
 <section class="contenedor">
-  @if (liga.value(); as l) {
+  @if (liga.hasValue() && liga.value(); as l) {
     <div class="encabezado">
       <h1>{{ l.nombre }}</h1>
       <a class="boton" [href]="paginaPublica()" target="_blank" rel="noopener">Ver la página pública ↗</a>
@@ -38,7 +38,7 @@
 
       <div class="tarjeta">
         <h2>Equipos ({{ cantidadInscriptos() }})</h2>
-        @if (misEquipos.value(); as equipos) {
+        @if (misEquipos.hasValue() && misEquipos.value(); as equipos) {
           <div class="equipos">
             @for (e of equipos; track e.id) {
               <div class="equipo">

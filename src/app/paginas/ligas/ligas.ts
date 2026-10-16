@@ -13,7 +13,7 @@ import { Ligas as LigasServicio } from '../../core/ligas';
         Una liga junta temporadas, divisiones y el fixture. Cada liga tiene una página pública con la tabla,
         los resultados, los partidos en vivo y los líderes.
       </p>
-      @if (ligas.value(); as lista) {
+      @if (ligas.hasValue() && ligas.value(); as lista) {
         <div class="grilla">
           @for (l of lista; track l.id) {
             <a class="tarjeta liga" [routerLink]="['/ligas', l.id]">

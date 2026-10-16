@@ -8,12 +8,13 @@ import { Promedios } from '../../compartido/promedios';
 import { mensajeDeError } from '../../core/api';
 import { Equipos, Partidos } from '../../core/servicios';
 import EquipoForm from './equipo-form';
+import { valor } from '../../core/recurso';
 
 @Component({
   imports: [RouterLink, Imagen, Promedios, Planilla, BotonEliminar, EquipoForm],
   template: `
     <section class="contenedor">
-      @if (equipo.value(); as e) {
+      @if (equipo.hasValue() && equipo.value(); as e) {
         <div class="tarjeta">
           @if (editando()) {
             <app-equipo-form [equipo]="e" (cerrado)="cerrarEdicion($event)" />
@@ -78,8 +79,8 @@ export default class Equipo {
   private readonly listaPartidos = resource({ loader: () => this.partidos.listar() });
 
   protected readonly filas = computed<FilaPlanilla[]>(() => {
-    const e = this.equipo.value();
-    const partidos = new Map((this.listaPartidos.value() ?? []).map((p) => [p.id, p]));
+    const e = valor(this.equipo);
+    const partidos = new Map((valor(this.listaPartidos) ?? []).map((p) => [p.id, p]));
     const fecha = new DatePipe('en-US');
     return (e?.estadisticasPartidos ?? []).map((s) => {
       const p = partidos.get(s.partidoId);
