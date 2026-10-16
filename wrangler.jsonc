@@ -1,0 +1,10 @@
+// Deploy en Cloudflare Workers con archivos estáticos.
+// "single-page-application" devuelve index.html en las rutas de Angular al recargar.
+{
+  "name": "statsappfront",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist/stats-basket/browser",
+    "not_found_handling": "single-page-application"
+  }
+}

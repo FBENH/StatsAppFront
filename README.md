@@ -37,10 +37,10 @@ The API URL is in `src/environments/environment.development.ts` (local) and `src
 
 ## Deploy
 
-The demo runs on Cloudflare Pages, connected to this repository:
+The demo runs on Cloudflare Workers (static assets), connected to this repository, at https://statsappfront.federico-m-bentancor.workers.dev:
 
 - Build command: `npm run build`
-- Build output directory: `dist/stats-basket/browser`
+- Deploy command: `npx wrangler deploy`
 - Environment variable: `NODE_VERSION=24`
 
-Pages serves `index.html` for any route that isn't a file, so the Angular routes work on reload. The production build calls the API at `https://statsappapi.azurewebsites.net`.
+`wrangler.jsonc` points to the build output (`dist/stats-basket/browser`) and serves `index.html` for any route that isn't a file, so the Angular routes work on reload. The production build calls the API at `https://statsappapi.azurewebsites.net`.
