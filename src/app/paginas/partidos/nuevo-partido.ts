@@ -1,4 +1,4 @@
-import { Component, computed, inject, resource, signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit, resource, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ErrorApi, mensajeDeError } from '../../core/api';
@@ -30,7 +30,12 @@ import { Equipos, Jugadores, PartidoEnCurso, Partidos } from '../../core/servici
         </div>
       }
       <div class="tarjeta formulario">
-        <div class="campos-dobles">
+        @if (programadoId()) {
+          <p class="liga">
+            Partido de liga: <strong>{{ nombreEquipo(datos.local.id) }}</strong> vs <strong>{{ nombreEquipo(datos.visitante.id) }}</strong>
+          </p>
+        }
+        <div class="campos-dobles" [hidden]="programadoId()">
           @for (lado of lados; track lado.clave) {
             <fieldset class="lado">
               <legend>{{ lado.titulo }}</legend>
@@ -88,13 +93,21 @@ import { Equipos, Jugadores, PartidoEnCurso, Partidos } from '../../core/servici
     .boton.activo { background: var(--acento); border-color: var(--acento); color: var(--acento-texto); }
     .sugerencia { margin: 0; font-size: 0.9rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
     .nota { margin: 0; font-size: 0.8rem; }
+    .liga { margin: 0; }
     .minutos { max-width: 10rem; }
     .en-curso { margin-bottom: 1rem; display: grid; gap: 0.5rem; }
     .en-curso h2, .en-curso p { margin: 0; }
     .en-curso .fila { justify-content: space-between; }
   `,
 })
-export default class NuevoPartido {
+export default class NuevoPartido implements OnInit {
+  // Llegan por la URL cuando se empieza a anotar un partido del fixture de una liga.
+  readonly programado = input<string>();
+  readonly local = input<string>();
+  readonly visitante = input<string>();
+  readonly fechaProgramada = input<string>(undefined, { alias: 'fecha' });
+  protected readonly programadoId = computed(() => (this.programado() ? +this.programado()! : undefined));
+
   private readonly equiposServicio = inject(Equipos);
   private readonly jugadores = inject(Jugadores);
   private readonly partidos = inject(Partidos);
@@ -116,6 +129,16 @@ export default class NuevoPartido {
   protected lugar = '';
   protected readonly error = signal<string | null>(null);
   protected readonly ocupado = signal(false);
+
+  ngOnInit() {
+    if (!this.programadoId()) return;
+    this.datos = { local: { ...datosVacios(), id: +this.local()! }, visitante: { ...datosVacios(), id: +this.visitante()! } };
+    if (this.fechaProgramada()) this.fecha = this.fechaProgramada()!;
+  }
+
+  protected nombreEquipo(id: number | null) {
+    return this.equipos.value()?.find((e) => e.id === id)?.nombre ?? '…';
+  }
 
   /** Equipo ya cargado con el mismo nombre (sin importar mayúsculas ni tildes). */
   protected parecido(nombre: string) {
@@ -147,6 +170,7 @@ export default class NuevoPartido {
         duracionCuartoMin: duracion,
         local: l,
         visitante: v,
+        programadoId: this.programadoId(),
       });
       this.router.navigate(['/partidos/en-vivo']);
     });

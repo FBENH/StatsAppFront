@@ -1,0 +1,163 @@
+<section class="contenedor">
+  @if (liga.value(); as l) {
+    <div class="encabezado">
+      <h1>{{ l.nombre }}</h1>
+      <a class="boton" [href]="paginaPublica()" target="_blank" rel="noopener">Ver la página pública ↗</a>
+    </div>
+
+    <div class="fila temporadas">
+      <label class="campo en-linea">
+        <span>Temporada</span>
+        <select [ngModel]="l.temporada.id" (ngModelChange)="cambiarTemporada($event)" [ngModelOptions]="{ standalone: true }">
+          @for (t of l.temporadas; track t.id) { <option [ngValue]="t.id">{{ t.nombre }}</option> }
+        </select>
+      </label>
+      <button class="boton chico" type="button" (click)="nuevaTemporada()" [disabled]="ocupado()">Nueva temporada</button>
+    </div>
+
+    @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+    @if (aviso()) { <p class="exito" role="status">{{ aviso() }}</p> }
+
+    <div class="columnas">
+      <div class="tarjeta">
+        <h2>Divisiones</h2>
+        <p class="suave">Opcional. Cada división tiene su tabla y su propio todos contra todos.</p>
+        <div class="fila chips">
+          @for (d of l.temporada.divisiones; track d.id) {
+            <span class="chip">
+              {{ d.nombre }}
+              <button type="button" (click)="quitarDivision(d.id)" [attr.aria-label]="'Borrar la división ' + d.nombre">×</button>
+            </span>
+          } @empty { <span class="suave">Sin divisiones: una sola tabla.</span> }
+        </div>
+        <form class="fila" (ngSubmit)="agregarDivision()">
+          <input name="division" [(ngModel)]="division" maxlength="40" placeholder="Nombre, por ejemplo A" aria-label="Nueva división" />
+          <button class="boton chico" type="submit" [disabled]="!division.trim() || ocupado()">Agregar</button>
+        </form>
+      </div>
+
+      <div class="tarjeta">
+        <h2>Equipos ({{ cantidadInscriptos() }})</h2>
+        @if (misEquipos.value(); as equipos) {
+          <div class="equipos">
+            @for (e of equipos; track e.id) {
+              <div class="equipo">
+                <label class="opcion">
+                  <input type="checkbox" [checked]="inscripcion(e.id).juega"
+                    (change)="cambiarInscripcion(e.id, { juega: $any($event.target).checked })" />
+                  {{ e.nombre }}
+                </label>
+                @if (inscripcion(e.id).juega && l.temporada.divisiones.length > 0) {
+                  <select [ngModel]="inscripcion(e.id).divisionId" (ngModelChange)="cambiarInscripcion(e.id, { divisionId: $event })"
+                    [ngModelOptions]="{ standalone: true }" [attr.aria-label]="'División de ' + e.nombre">
+                    <option [ngValue]="null">Sin división</option>
+                    @for (d of l.temporada.divisiones; track d.id) { <option [ngValue]="d.id">{{ d.nombre }}</option> }
+                  </select>
+                }
+              </div>
+            } @empty {
+              <p class="suave">No tenés equipos. <a routerLink="/equipos/nuevo">Crear uno</a></p>
+            }
+          </div>
+          <button class="boton primario" type="button" (click)="guardarEquipos()" [disabled]="ocupado()">Guardar equipos</button>
+        }
+      </div>
+    </div>
+
+    <h2>Fixture</h2>
+    @if (l.temporada.partidos.length === 0) {
+      <form class="tarjeta formulario" (ngSubmit)="generarFixture()">
+        <p class="suave">Arma un todos contra todos con los equipos inscriptos, una fecha por semana o cada los días que elijas.</p>
+        <div class="campos-dobles">
+          <label class="campo"><span>Primera fecha</span><input type="date" name="desde" [(ngModel)]="fixture.desde" /></label>
+          <label class="campo"><span>Días entre fechas</span><input type="number" name="dias" [(ngModel)]="fixture.dias" min="1" max="60" /></label>
+        </div>
+        <label class="opcion"><input type="checkbox" name="ida" [(ngModel)]="fixture.idaYVuelta" /> Ida y vuelta</label>
+        <button class="boton primario" type="submit" [disabled]="ocupado() || inscriptos().length < 2">Generar fixture</button>
+      </form>
+    }
+
+    @for (j of jornadas(); track j.jornada) {
+      <h3>{{ j.jornada === null ? 'Sin fecha asignada' : 'Fecha ' + j.jornada }}</h3>
+      <div class="partidos">
+        @for (p of j.partidos; track p.id) {
+          <div class="tarjeta partido" [class.en-vivo]="p.estado === 'EnCurso'">
+            <div class="cruce">
+              <span>{{ p.local.nombre }}</span>
+              @if (p.estado === 'Programado') {
+                <span class="suave">vs</span>
+              } @else {
+                <strong class="marcador">{{ p.local.puntos }} – {{ p.visitante.puntos }}</strong>
+              }
+              <span>{{ p.visitante.nombre }}</span>
+            </div>
+            <div class="fila pie-partido">
+              <span class="suave">
+                @if (p.estado === 'EnCurso') { <span class="vivo">● En vivo</span> }
+                {{ p.fecha ? (p.fecha | date: 'EEE dd/MM') : 'Sin día' }}
+              </span>
+              @switch (p.estado) {
+                @case ('Programado') {
+                  <button class="boton chico primario" type="button" (click)="anotar(p)">Anotar</button>
+                  <button class="boton chico" type="button" (click)="borrarPartido(p)" [disabled]="ocupado()">Borrar</button>
+                }
+                @case ('EnCurso') { <a class="boton chico" routerLink="/partidos/nuevo">Seguir anotando</a> }
+                @default { <a class="boton chico" [routerLink]="['/partidos', p.id]">Ver planilla</a> }
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    @if (inscriptos().length >= 2) {
+      <details class="tarjeta agregar">
+        <summary>Agregar un partido a mano</summary>
+        <form class="formulario" (ngSubmit)="agregarPartido()">
+          <div class="campos-dobles">
+            <label class="campo">
+              <span>Local</span>
+              <select name="local" [(ngModel)]="nuevo.localId">
+                <option [ngValue]="null">Elegí</option>
+                @for (e of inscriptos(); track e.id) { <option [ngValue]="e.id">{{ e.nombre }}</option> }
+              </select>
+            </label>
+            <label class="campo">
+              <span>Visitante</span>
+              <select name="visitante" [(ngModel)]="nuevo.visitanteId">
+                <option [ngValue]="null">Elegí</option>
+                @for (e of inscriptos(); track e.id) { <option [ngValue]="e.id">{{ e.nombre }}</option> }
+              </select>
+            </label>
+            <label class="campo"><span>Día</span><input type="date" name="fecha" [(ngModel)]="nuevo.fecha" /></label>
+            <label class="campo"><span>Fecha del fixture</span><input type="number" name="jornada" [(ngModel)]="nuevo.jornada" min="1" /></label>
+          </div>
+          <button class="boton" type="submit" [disabled]="ocupado() || nuevo.localId === null || nuevo.visitanteId === null">Agregar</button>
+        </form>
+      </details>
+    }
+
+    <details class="tarjeta ajustes">
+      <summary>Datos de la liga</summary>
+      <form class="formulario" (ngSubmit)="guardarLiga()">
+        <label class="campo"><span>Nombre</span><input name="nombre" [(ngModel)]="edicion.nombre" maxlength="60" required /></label>
+        <label class="campo">
+          <span>Dirección pública</span>
+          <input name="slug" [(ngModel)]="edicion.slug" maxlength="60" />
+        </label>
+        <label class="campo">
+          <span>Descripción</span>
+          <textarea name="descripcion" [(ngModel)]="edicion.descripcion" maxlength="500" rows="3"></textarea>
+        </label>
+        <button class="boton primario" type="submit" [disabled]="ocupado()">Guardar</button>
+      </form>
+      <div class="eliminar">
+        <app-boton-eliminar pregunta="¿Eliminar la liga? Solo se puede si no tiene partidos jugados." (confirmado)="eliminarLiga()" />
+      </div>
+    </details>
+  } @else if (liga.error()) {
+    <p class="error">No se encontró la liga.</p>
+  } @else {
+    <p class="suave">Cargando…</p>
+  }
+</section>

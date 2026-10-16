@@ -8,6 +8,8 @@ export const routes: Routes = [
   { path: '', loadComponent: () => import('./paginas/portada'), canActivate: [soloSinSesion], title: 'StatsApp' },
   { path: 'ingresar', loadComponent: () => import('./paginas/ingresar'), canActivate: [soloSinSesion], title: 'Ingresar · StatsApp' },
   { path: 'registro', loadComponent: () => import('./paginas/registro'), canActivate: [soloSinSesion], title: 'Crear cuenta · StatsApp' },
+  // Página pública de una liga: no pide login.
+  { path: 'liga/:slug', loadComponent: () => import('./paginas/ligas/liga-publica'), title: 'Liga · StatsApp' },
   {
     path: '',
     canActivate: [authGuard],
@@ -22,6 +24,8 @@ export const routes: Routes = [
       { path: 'partidos', loadComponent: () => import('./paginas/partidos/partidos'), title: 'Partidos · StatsApp' },
       { path: 'partidos/nuevo', loadComponent: () => import('./paginas/partidos/nuevo-partido'), title: 'Nuevo partido · StatsApp' },
       { path: 'partidos/en-vivo', loadComponent: () => import('./paginas/partidos/en-vivo'), title: 'En vivo · StatsApp' },
+      { path: 'ligas', loadComponent: () => import('./paginas/ligas/ligas'), title: 'Ligas · StatsApp' },
+      { path: 'ligas/:id', loadComponent: () => import('./paginas/ligas/liga'), title: 'Liga · StatsApp' },
       { path: 'partidos/:id', loadComponent: () => import('./paginas/partidos/partido'), title: 'Partido · StatsApp' },
     ],
   },

@@ -1,0 +1,42 @@
+.cabecera { display: flex; justify-content: space-between; align-items: end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.cabecera h1 { margin: 0; }
+.sobre { margin: 0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.08em; }
+.en-vivo { display: grid; gap: 0.5rem; margin-bottom: 1rem; }
+.vivo { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 0.75rem; align-items: center; border-color: var(--peligro); }
+.vivo .equipo:last-child { text-align: right; }
+.insignia { color: var(--peligro); font-weight: 700; font-size: 0.75rem; letter-spacing: 0.05em; animation: titilar 1.6s ease-in-out infinite; }
+@keyframes titilar { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) { .insignia { animation: none; } }
+.tanteador { font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.mvps { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 1.25rem; }
+.mvp { display: grid; gap: 0.2rem; }
+.mvp strong { font-size: 1.15rem; }
+.mvp .detalle { font-size: 0.8rem; }
+.pestanias { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--borde); margin-bottom: 1rem; }
+.pestanias button {
+  border: 0; background: none; color: var(--texto-suave); font: inherit; font-weight: 600; padding: 0.6rem 0.9rem; cursor: pointer;
+  border-bottom: 3px solid transparent; margin-bottom: -1px;
+}
+.pestanias button.activa { color: var(--texto); border-bottom-color: var(--acento); }
+h2 { margin: 1.25rem 0 0.5rem; font-size: 1.05rem; }
+.tabla .izq { text-align: left; }
+.nota { font-size: 0.85rem; }
+.partidos { display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.partido { display: grid; gap: 0.4rem; }
+.partido.jugando { border-color: var(--peligro); }
+.cruce { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0.5rem; align-items: center; }
+.cruce span:last-child { text-align: right; }
+.gano { font-weight: 700; }
+.pie { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; font-size: 0.82rem; }
+.lideres { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.lideres h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+.lideres ol { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.3rem; }
+.lideres li > span:first-child { margin-right: auto; }
+.lideres li { font-size: 0.9rem; }
+.lideres li strong { float: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) {
+  /* En el celular los MVP van en una fila que se desliza y la tabla deja afuera PF y PC. */
+  .mvps { grid-auto-flow: column; grid-auto-columns: 75%; grid-template-columns: none; overflow-x: auto; scroll-snap-type: x mandatory; }
+  .mvp { scroll-snap-align: start; }
+  .tabla th:nth-child(7), .tabla td:nth-child(7), .tabla th:nth-child(8), .tabla td:nth-child(8) { display: none; }
+}

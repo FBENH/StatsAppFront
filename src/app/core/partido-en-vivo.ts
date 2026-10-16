@@ -87,7 +87,10 @@ export class PartidoEnVivo {
     duracionCuartoMin?: number;
     local: EquipoEnVivo;
     visitante: EquipoEnVivo;
+    /** Partido del fixture de una liga que se empieza a anotar. */
+    programadoId?: number;
   }) {
+    const { programadoId, ...resto } = datos;
     const duracionCuartoMin = datos.duracionCuartoMin ?? 10;
     const partidoId = await this.api.post<number>('/Partido/Iniciar', {
       equipoLocal: datos.local.id,
@@ -95,9 +98,10 @@ export class PartidoEnVivo {
       fecha: datos.fecha,
       lugar: datos.lugar,
       duracionCuartoMin,
+      partidoId: programadoId,
     });
     this.estado.set({
-      ...datos,
+      ...resto,
       partidoId,
       duracionCuartoMin,
       jugadas: [],

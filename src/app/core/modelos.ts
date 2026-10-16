@@ -87,7 +87,7 @@ export interface PartidoResumen {
   equipoVisitanteId: number;
   ganador: number | null;
   ganadorNombre: string | null;
-  estado?: 'Finalizado' | 'EnCurso';
+  estado?: 'Finalizado' | 'EnCurso' | 'Programado';
 }
 
 export interface PartidoDetalle extends PartidoResumen {
