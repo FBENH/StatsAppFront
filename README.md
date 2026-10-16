@@ -44,3 +44,7 @@ The demo runs on Cloudflare Workers (static assets), connected to this repositor
 - Environment variable: `NODE_VERSION=24`
 
 `wrangler.jsonc` points to the build output (`dist/stats-basket/browser`) and serves `index.html` for any route that isn't a file, so the Angular routes work on reload. The production build calls the API at `https://statsappapi.azurewebsites.net`.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
