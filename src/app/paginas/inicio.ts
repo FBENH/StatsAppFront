@@ -29,7 +29,7 @@ import { Partidos } from '../core/servicios';
       </div>
 
       <h2>Últimos partidos</h2>
-      @if (partidos.value(); as lista) {
+      @if (partidos.hasValue() && partidos.value(); as lista) {
         @for (p of lista; track p.id) {
           <a class="tarjeta partido" [routerLink]="['/partidos', p.id]">
             <span>{{ p.local }} vs {{ p.visitante }}</span>

@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, inject, resource } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Partidos as PartidosServicio } from '../../core/servicios';
+import { valor } from '../../core/recurso';
 
 @Component({
   imports: [RouterLink, DatePipe],
@@ -11,7 +12,7 @@ import { Partidos as PartidosServicio } from '../../core/servicios';
         <h1>Partidos</h1>
         <a class="boton primario" routerLink="/partidos/nuevo">Nuevo partido</a>
       </div>
-      @if (partidos.value()) {
+      @if (partidos.hasValue()) {
         @for (p of ordenados(); track p.id) {
           <a class="tarjeta partido" [routerLink]="['/partidos', p.id]">
             <span class="equipos">
@@ -41,6 +42,6 @@ export default class Partidos {
   private readonly servicio = inject(PartidosServicio);
   protected readonly partidos = resource({ loader: () => this.servicio.listar() });
   protected readonly ordenados = computed(() =>
-    [...(this.partidos.value() ?? [])].sort((a, b) => (b.fecha ?? '').localeCompare(a.fecha ?? '') || b.id - a.id),
+    [...(valor(this.partidos) ?? [])].sort((a, b) => (b.fecha ?? '').localeCompare(a.fecha ?? '') || b.id - a.id),
   );
 }

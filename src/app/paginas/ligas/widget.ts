@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, effect, inject, input, resource } from '@angular/core';
 import { EnVivo } from '../../core/en-vivo';
 import { LigasPublicas, PartidoDeLiga } from '../../core/ligas';
+import { valor } from '../../core/recurso';
 
 /**
  * Marcador chico para incrustar con un iframe en el sitio de una liga:
@@ -10,7 +11,7 @@ import { LigasPublicas, PartidoDeLiga } from '../../core/ligas';
 @Component({
   imports: [DatePipe],
   template: `
-    @if (liga.value(); as l) {
+    @if (liga.hasValue() && liga.value(); as l) {
       <div class="widget">
         <a class="titulo" [href]="'/liga/' + slug()" target="_blank" rel="noopener">{{ l.nombre }}</a>
         @for (g of grupos(); track g.titulo) {
@@ -63,7 +64,7 @@ export default class Widget {
   protected readonly partidos = resource({ params: () => this.slug(), loader: ({ params }) => this.api.partidos(params) });
 
   protected readonly grupos = computed(() => {
-    const todos = this.partidos.value() ?? [];
+    const todos = valor(this.partidos) ?? [];
     const cuando = (p: PartidoDeLiga) => (p.fecha ? Date.parse(p.fecha) : 0);
     const finalizados = todos.filter((p) => p.estado === 'Finalizado').sort((a, b) => cuando(b) - cuando(a) || b.id - a.id);
     const programados = todos.filter((p) => p.estado === 'Programado').sort((a, b) => cuando(a) - cuando(b) || a.id - b.id);
@@ -81,7 +82,7 @@ export default class Widget {
         this.slug(),
         {
           partido: (p) => {
-            if (this.partidos.value()?.some((x) => x.id === p.id)) {
+            if (valor(this.partidos)?.some((x) => x.id === p.id)) {
               this.partidos.update((lista) => lista?.map((x) => (x.id === p.id ? { ...x, ...p } : x)));
             } else this.partidos.reload();
           },

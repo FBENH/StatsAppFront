@@ -2,6 +2,7 @@ import { Component, computed, inject, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Imagen } from '../../compartido/imagen';
 import { Equipos, Jugadores as JugadoresServicio } from '../../core/servicios';
+import { valor } from '../../core/recurso';
 
 @Component({
   imports: [RouterLink, Imagen],
@@ -17,10 +18,10 @@ import { Equipos, Jugadores as JugadoresServicio } from '../../core/servicios';
         <select aria-label="Equipo" (change)="equipo.set($any($event.target).value)">
           <option value="">Todos los equipos</option>
           <option value="sin">Sin equipo</option>
-          @for (e of equipos.value(); track e.id) { <option [value]="e.id">{{ e.nombre }}</option> }
+          @for (e of equipos.hasValue() ? equipos.value() : []; track e.id) { <option [value]="e.id">{{ e.nombre }}</option> }
         </select>
       </div>
-      @if (jugadores.value()) {
+      @if (jugadores.hasValue()) {
         <div class="grilla">
           @for (j of filtrados(); track j.id) {
             <a class="tarjeta fila jugador" [routerLink]="['/jugadores', j.id]">
@@ -60,7 +61,7 @@ export default class Jugadores {
   protected readonly filtrados = computed(() => {
     const texto = this.busqueda().trim().toLowerCase();
     const equipo = this.equipo();
-    return (this.jugadores.value() ?? [])
+    return (valor(this.jugadores) ?? [])
       .filter((j) => !equipo || (equipo === 'sin' ? j.equipoId === null : j.equipoId === +equipo))
       .filter((j) => !texto || j.nombre.toLowerCase().includes(texto) || String(j.numero) === texto)
       .sort((a, b) => (a.equipo ?? '~').localeCompare(b.equipo ?? '~') || a.numero - b.numero);

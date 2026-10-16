@@ -50,12 +50,20 @@ export class EnVivo {
     let cerrada = false;
     let reintento: ReturnType<typeof setTimeout> | undefined;
     // Si la primera conexión falla (por ejemplo, sin red), se reintenta cada 5 segundos.
-    const iniciar = async () => {
+    // Si conecta pero la liga o el partido no existen, el hub rechaza la suscripción y no tiene sentido reintentar.
+    const iniciar = async (): Promise<boolean> => {
       try {
         await conexion.start();
-        await suscribir(conexion);
       } catch {
-        if (!cerrada) reintento = setTimeout(() => iniciar().then(() => avisos.reconectado?.()), 5000);
+        if (!cerrada) reintento = setTimeout(async () => { if (await iniciar()) avisos.reconectado?.(); }, 5000);
+        return false;
+      }
+      try {
+        await suscribir(conexion);
+        return true;
+      } catch {
+        await conexion.stop();
+        return false;
       }
     };
     alTerminar(() => {
@@ -63,6 +71,6 @@ export class EnVivo {
       clearTimeout(reintento);
       if (conexion.state !== HubConnectionState.Disconnected) conexion.stop();
     });
-    return iniciar();
+    return iniciar().then(() => undefined);
   }
 }
