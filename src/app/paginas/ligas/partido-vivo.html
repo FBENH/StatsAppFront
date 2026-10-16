@@ -1,0 +1,99 @@
+<section class="contenedor">
+  @if (detalle.value(); as d) {
+    <a class="volver" [routerLink]="['/liga', slug()]">← {{ d.temporada.nombre }}</a>
+
+    <div class="tarjeta marcador" [class.en-vivo]="estado() === 'EnCurso'">
+      <div class="equipo">
+        <span class="nombre local">{{ d.local.nombre }}</span>
+        @for (p of [puntos().local]; track p) { <span class="puntos">{{ p }}</span> }
+      </div>
+      <div class="centro">
+        @switch (estado()) {
+          @case ('EnCurso') { <span class="insignia">● EN VIVO</span> <span class="suave">{{ momento() }}</span> }
+          @case ('Finalizado') { <span class="suave">Final</span> }
+          @default { <span class="suave">Todavía no empezó</span> }
+        }
+      </div>
+      <div class="equipo">
+        <span class="nombre visitante">{{ d.visitante.nombre }}</span>
+        @for (p of [puntos().visitante]; track p) { <span class="puntos">{{ p }}</span> }
+      </div>
+    </div>
+
+    @if (parcial(); as p) {
+      <p class="parcial" role="status">Parcial {{ p.puntos }}-0 de {{ p.equipo }}</p>
+    }
+
+    <div class="cuerpo">
+      <div class="columna">
+        <div class="tarjeta cancha">
+          <div class="fila cabecera-cancha">
+            <strong>Tiros</strong>
+            <span class="suave">{{ tirosResumen() }}</span>
+            <select [value]="filtroTiros()" (change)="filtroTiros.set($any($event.target).value)" aria-label="Ver los tiros de">
+              <option value="todos">Todos</option>
+              @for (e of [d.local, d.visitante]; track e.id) {
+                <optgroup [label]="e.nombre">
+                  <option [value]="'e' + e.id">Todo {{ e.nombre }}</option>
+                  @for (j of jugadoresDe(e.id); track j.id) { <option [value]="'j' + j.id">{{ nombreTiro(j.id) }}</option> }
+                </optgroup>
+              }
+            </select>
+          </div>
+          <div class="lienzo">
+            <app-cancha [tiros]="tiros()" etiqueta="Tiros del partido" />
+            @if (ultimoTiro(); as t) {
+              <span class="cartel" [class.fallo]="!t.acierto" [style.left.%]="t.x * 100" [style.top.%]="t.y * 100">{{ t.texto }}</span>
+            }
+          </div>
+        </div>
+
+        <div class="tarjeta">
+          <div class="fila cabecera-cancha">
+            <strong>Diferencia</strong>
+            <span class="suave">
+              @if (diferencia().actual === 0) { Empate } @else {
+                {{ diferencia().actual > 0 ? d.local.nombre : d.visitante.nombre }} +{{ diferencia().actual > 0 ? diferencia().actual : -diferencia().actual }}
+              }
+            </span>
+          </div>
+          <svg class="grafico" [attr.viewBox]="'0 0 ' + diferencia().ancho + ' ' + diferencia().alto" preserveAspectRatio="none"
+            role="img" aria-label="Diferencia de puntos a lo largo del partido">
+            <line x1="0" [attr.x2]="diferencia().ancho" [attr.y1]="diferencia().alto / 2" [attr.y2]="diferencia().alto / 2" class="cero" />
+            <polyline [attr.points]="diferencia().linea" />
+          </svg>
+          <div class="fila leyenda suave"><span>▲ {{ d.local.nombre }}</span><span>▼ {{ d.visitante.nombre }}</span></div>
+        </div>
+      </div>
+
+      <div class="columna">
+        <nav class="pestanias" role="tablist">
+          <button type="button" role="tab" [class.activa]="pestania() === 'relato'" [attr.aria-selected]="pestania() === 'relato'"
+            (click)="pestania.set('relato')">Jugada a jugada</button>
+          <button type="button" role="tab" [class.activa]="pestania() === 'planilla'" [attr.aria-selected]="pestania() === 'planilla'"
+            (click)="pestania.set('planilla')">Planilla</button>
+        </nav>
+        @if (pestania() === 'relato') {
+          <ol class="relato" aria-live="polite">
+            @for (l of relatoInverso(); track l.id) {
+              <li [class.destacado]="l.destacado" [class.local]="l.equipoId === d.local.id" [class.visitante]="l.equipoId === d.visitante.id"
+                [class.anota]="l.puntos > 0">
+                <span class="suave momento">{{ l.momento }}</span>
+                <span>{{ l.texto }}</span>
+              </li>
+            } @empty { <li class="suave">Todavía no hay jugadas.</li> }
+          </ol>
+        } @else {
+          @for (p of planillas(); track p.equipo) {
+            <h2>{{ p.equipo }}</h2>
+            <app-planilla [filas]="p.filas" [total]="p.total" [conMinutos]="true" />
+          }
+        }
+      </div>
+    </div>
+  } @else if (detalle.error()) {
+    <p class="error">No se encontró el partido.</p>
+  } @else {
+    <p class="suave">Cargando…</p>
+  }
+</section>

@@ -24,3 +24,5 @@ details { margin-top: 1.25rem; }
 summary { cursor: pointer; font-weight: 600; }
 details .formulario { margin-top: 0.75rem; }
 .eliminar { margin-top: 1rem; }
+
+.codigo { width: 100%; font-family: ui-monospace, monospace; font-size: 0.8rem; margin: 0.5rem 0; }

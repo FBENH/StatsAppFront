@@ -23,12 +23,13 @@
     @if (enVivo().length > 0) {
       <div class="en-vivo" aria-live="polite">
         @for (p of enVivo(); track p.id) {
-          <div class="tarjeta vivo">
+          <a class="tarjeta vivo" [routerLink]="['partido', p.id]">
             <span class="insignia">● EN VIVO</span>
             <span class="equipo">{{ p.local.nombre }}</span>
-            <strong class="tanteador">{{ p.local.puntos }} – {{ p.visitante.puntos }}</strong>
+            @for (t of [p.local.puntos + '–' + p.visitante.puntos]; track t) { <strong class="tanteador salto">{{ p.local.puntos }} – {{ p.visitante.puntos }}</strong> }
             <span class="equipo">{{ p.visitante.nombre }}</span>
-          </div>
+            <span class="suave ver">Ver →</span>
+          </a>
         }
       </div>
     }
@@ -93,7 +94,8 @@
           <h2>{{ j.jornada === null ? 'Otros partidos' : 'Fecha ' + j.jornada }}</h2>
           <div class="partidos">
             @for (p of j.partidos; track p.id) {
-              <div class="tarjeta partido" [class.jugando]="p.estado === 'EnCurso'">
+              <a class="tarjeta partido" [class.jugando]="p.estado === 'EnCurso'"
+                [routerLink]="p.estado === 'Programado' ? null : ['partido', p.id]">
                 <div class="cruce">
                   <span [class.gano]="p.estado === 'Finalizado' && p.local.puntos! > p.visitante.puntos!">{{ p.local.nombre }}</span>
                   @if (p.estado === 'Programado') { <span class="suave">vs</span> }
@@ -108,7 +110,7 @@
                   }
                   @if (p.mvp; as m) { <span>MVP: {{ nombre(m.jugador) }} ({{ m.puntos }} pts, {{ m.valoracion }} val.)</span> }
                 </div>
-              </div>
+              </a>
             }
           </div>
         } @empty { <p class="vacio">Todavía no hay fixture.</p> }
