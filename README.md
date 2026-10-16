@@ -34,3 +34,13 @@ npm run build      # output in dist/stats-basket/browser
 ```
 
 The API URL is in `src/environments/environment.development.ts` (local) and `src/environments/environment.ts` (production build).
+
+## Deploy
+
+The demo runs on Cloudflare Pages, connected to this repository:
+
+- Build command: `npm run build`
+- Build output directory: `dist/stats-basket/browser`
+- Environment variable: `NODE_VERSION=24`
+
+Pages serves `index.html` for any route that isn't a file, so the Angular routes work on reload. The production build calls the API at `https://statsappapi.azurewebsites.net`.
