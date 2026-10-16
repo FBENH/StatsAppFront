@@ -48,7 +48,7 @@ export class Jugadores {
   listar = () => this.api.get<JugadorListado[]>('/Jugadores/Listar');
   porEquipo = (equipoId: number) => this.api.get<JugadorListado[]>('/Jugadores/ListarPorEquipo', { equipoId });
   obtener = (id: number) => this.api.get<Jugador>('/Jugadores/ListarPorId', { id });
-  crear = (jugador: JugadorForm) => this.api.post<null>('/Jugadores/Crear', jugador);
+  crear = (jugador: JugadorForm) => this.api.post<number>('/Jugadores/Crear', jugador);
   modificar = (jugador: JugadorForm) => this.api.put<null>('/Jugadores/Modificar', jugador);
   eliminar = (id: number) => this.api.delete('/Jugadores/Eliminar', { id });
 }

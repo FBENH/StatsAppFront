@@ -1,0 +1,218 @@
+@if (vivo.estado(); as e) {
+  <section class="contenedor pantalla">
+    <div class="tarjeta marcador">
+      @for (equipo of equipos(); track equipo.id; let i = $index) {
+        <div class="lado" [class.visitante]="i === 1" [style.order]="i * 2">
+          <span class="nombre">{{ equipo.nombre }}</span>
+          <span class="puntos">{{ i === 0 ? vivo.puntosLocal() : vivo.puntosVisitante() }}</span>
+          <span class="suave detalle-equipo">
+            {{ faltasCuarto()[equipo.id] ?? 0 }} faltas
+            @if ((faltasCuarto()[equipo.id] ?? 0) >= 5) { <span class="bonus">BONUS</span> }
+            · {{ tiemposMuertos(equipo.id) }} T.M.
+          </span>
+        </div>
+      }
+      <button type="button" class="reloj" [style.order]="1" (click)="alternarReloj()"
+        [attr.aria-label]="vivo.corriendo() ? 'Parar el reloj' : 'Poner en marcha el reloj'">
+        <span class="suave cuarto">{{ nombreCuarto(e.cuarto) }}</span>
+        <span class="tiempo" [class.parado]="!vivo.corriendo()">{{ reloj() }}</span>
+        <span class="suave estado-reloj">{{ vivo.corriendo() ? '❚❚ tocá para parar' : '▶ tocá para seguir' }}</span>
+      </button>
+    </div>
+
+    <p class="sincronizacion" [class.alerta]="vivo.conexion() === 'sin-conexion'" role="status">
+      @switch (vivo.conexion()) {
+        @case ('sin-conexion') { Sin conexión: {{ vivo.pendientes() }} jugadas guardadas en este dispositivo, se envían cuando vuelva. }
+        @case ('enviando') { Guardando… }
+        @default { ● Guardado }
+      }
+    </p>
+    @if (vivo.rechazo(); as r) { <p class="error" role="alert">Una jugada no se pudo guardar: {{ r }}</p> }
+    @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+
+    <div class="cuerpo">
+      <div class="lado-cancha">
+        <app-cancha [tiros]="tiros()" [interactiva]="!modoCambios()" [marca]="marca()"
+          etiqueta="Cancha: tocá donde fue el tiro" (toque)="tocarCancha($event)" />
+        @if (!modoCambios() && !pregunta()) {
+          <p class="suave pista">Tocá la cancha donde fue el tiro, o elegí un jugador y después la jugada.</p>
+        }
+      </div>
+
+      <div class="panel">
+        @if (modoCambios()) {
+          <div class="tarjeta">
+            <h2>Cambios</h2>
+            <p class="suave">Tocá al que sale y después al que entra. Si hay lugar, tocá uno del banco para que entre.</p>
+            @for (equipo of equipos(); track equipo.id; let i = $index) {
+              <h3 [class.visitante]="i === 1">{{ equipo.nombre }} ({{ enCancha(equipo).length }}/{{ maximo }})</h3>
+              <div class="fila-jugadores">
+                @for (j of enCancha(equipo); track j.id) {
+                  <ng-container *ngTemplateOutlet="ficha; context: { $implicit: j, i: i }" />
+                } @empty { <span class="suave">Nadie en cancha.</span> }
+              </div>
+              <p class="suave etiqueta-banco">Banco</p>
+              <div class="fila-jugadores">
+                @for (j of banco(equipo); track j.id) {
+                  <ng-container *ngTemplateOutlet="ficha; context: { $implicit: j, i: i }" />
+                }
+                <button type="button" class="jugador agregar" (click)="agregarJugador(equipo)"
+                  [attr.aria-label]="'Agregar un jugador a ' + equipo.nombre">+</button>
+              </div>
+            }
+            <div class="fila botones-panel">
+              @if (sale() !== null) {
+                <button class="boton" type="button" (click)="sacar()">Sacar sin reemplazo</button>
+              }
+              <button class="boton primario" type="button" (click)="alternarCambios()">Listo</button>
+            </div>
+          </div>
+        } @else if (pregunta(); as p) {
+          <div class="tarjeta pregunta" role="group" [attr.aria-label]="titulo()">
+            <h2>{{ titulo() }}</h2>
+            @if (p.tipo === 'tiro') {
+              @if (p.x === null) {
+                <div class="dos-botones">
+                  <button type="button" class="boton grande" [class.activo]="p.valor === 2" (click)="valor(2)">Doble</button>
+                  <button type="button" class="boton grande" [class.activo]="p.valor === 3" (click)="valor(3)">Triple</button>
+                </div>
+              }
+              <div class="dos-botones">
+                <button type="button" class="boton grande entro" [class.activo]="p.acierto === true" (click)="resultado(true)">Entró</button>
+                <button type="button" class="boton grande fallo" [class.activo]="p.acierto === false" (click)="resultado(false)">Falló</button>
+              </div>
+            }
+            @if (p.tipo === 'libres' && p.cantidad === null) {
+              <div class="tres-botones">
+                @for (n of [1, 2, 3]; track n) {
+                  <button type="button" class="boton grande" (click)="cantidadLibres(n)">{{ n }}</button>
+                }
+              </div>
+            }
+            @if (p.tipo === 'libres' && p.cantidad !== null && p.tiradorId !== null) {
+              <div class="dos-botones">
+                <button type="button" class="boton grande entro" (click)="resultado(true)">Entró</button>
+                <button type="button" class="boton grande fallo" (click)="resultado(false)">Falló</button>
+              </div>
+            } @else {
+              @for (o of opciones(); track o.equipo.id) {
+                <p class="suave etiqueta-equipo">{{ o.equipo.nombre }}</p>
+                <div class="fila-jugadores">
+                  @for (j of o.jugadores; track j.id) {
+                    <ng-container *ngTemplateOutlet="ficha; context: { $implicit: j, i: o.equipo.id === e.local.id ? 0 : 1 }" />
+                  }
+                  @if (p.tipo === 'rebote') {
+                    <button type="button" class="jugador equipo" (click)="reboteDeEquipo(o.equipo.id)">Equipo</button>
+                  }
+                </div>
+              }
+            }
+            <div class="fila botones-panel">
+              <button class="boton" type="button" (click)="cerrarPregunta()">
+                @switch (p.tipo) {
+                  @case ('asistencia') { Sin asistencia }
+                  @case ('rebote') { Sin rebote }
+                  @case ('robo') { No sé }
+                  @case ('libres') { {{ p.hechos > 0 ? 'Terminar' : 'Sin libres' }} }
+                  @default { Cancelar }
+                }
+              </button>
+            </div>
+          </div>
+        } @else {
+          @for (equipo of equipos(); track equipo.id; let i = $index) {
+            <p class="suave etiqueta-equipo" [class.visitante]="i === 1">{{ equipo.nombre }} en cancha</p>
+            <div class="fila-jugadores">
+              @for (j of enCancha(equipo); track j.id) {
+                <ng-container *ngTemplateOutlet="ficha; context: { $implicit: j, i: i }" />
+              } @empty {
+                <button type="button" class="boton" (click)="alternarCambios()">Elegir quién juega</button>
+              }
+            </div>
+          }
+          <div class="botonera">
+            <button type="button" class="boton" (click)="tiroSinLugar()">Tiro</button>
+            <button type="button" class="boton" (click)="libres()">Libres</button>
+            @for (a of acciones; track a.accion) {
+              <button type="button" class="boton" (click)="accion(a.accion)">{{ a.texto }}</button>
+            }
+          </div>
+          @if (elegido() !== null) {
+            <p class="suave">Elegí la jugada, o tocá la cancha para un tiro.</p>
+          }
+          <ol class="ultimas" aria-label="Últimas jugadas">
+            @for (j of ultimas(); track j.id) {
+              <li><span class="suave">{{ momento(j) }}</span> {{ describir(j) }}</li>
+            }
+          </ol>
+        }
+      </div>
+    </div>
+
+    <nav class="pie" aria-label="Acciones del partido">
+      <button class="boton" type="button" (click)="deshacer()" [disabled]="!vivo.puedeDeshacer()">↶ Deshacer</button>
+      <button class="boton" type="button" [class.activo]="modoCambios()" (click)="alternarCambios()">Cambios</button>
+      <button class="boton" type="button" (click)="abrir('registro')">Jugadas</button>
+      <button class="boton" type="button" (click)="abrir('planilla')">Planilla</button>
+      <button class="boton" type="button" (click)="abrir('menu')">Más…</button>
+    </nav>
+
+    @if (aviso(); as a) {
+      <div class="aviso" role="status">
+        <span>{{ a.texto }}</span>
+        <button type="button" class="boton chico" (click)="deshacerAviso()">Deshacer</button>
+      </div>
+    }
+  </section>
+
+  <ng-template #ficha let-j let-i="i">
+    <button type="button" class="jugador" [class.visitante]="i === 1" [class.elegido]="seleccionado(j.id)"
+      [class.sale]="sale() === j.id" (click)="tocarJugador(j.id)" [attr.aria-pressed]="seleccionado(j.id)">
+      <span class="numero">{{ j.numero }}</span>
+      @if (nombre(j)) { <span class="nombre-jugador">{{ nombre(j) }}</span> }
+      <span class="detalle">{{ puntos(j.id) }} · {{ faltas(j.id) }}f</span>
+    </button>
+  </ng-template>
+
+  <dialog #menu>
+    <h2>Partido</h2>
+    <div class="menu">
+      @for (equipo of equipos(); track equipo.id) {
+        <button class="boton" type="button" (click)="tiempoMuerto(equipo.id)">Tiempo muerto {{ equipo.nombre }}</button>
+      }
+      <button class="boton" type="button" (click)="editarReloj()">Corregir el reloj</button>
+      <button class="boton" type="button" (click)="siguienteCuarto()">Terminar el {{ nombreCuarto(e.cuarto).toLowerCase() }}</button>
+      <button class="boton primario" type="button" (click)="finalizar()" [disabled]="guardando()">Terminar el partido</button>
+      <button class="boton peligro" type="button" (click)="descartar()">Descartar el partido</button>
+    </div>
+    <form method="dialog"><button class="boton">Cerrar</button></form>
+  </dialog>
+
+  <dialog #registro>
+    <h2>Jugadas ({{ e.jugadas.length }})</h2>
+    <p class="suave">Si algo quedó mal, borralo y volvé a anotarlo.</p>
+    <ol class="registro">
+      @for (j of registroInverso(); track j.id) {
+        <li>
+          <span class="suave">{{ momento(j) }}</span>
+          <span class="texto">{{ describir(j) }}</span>
+          <button type="button" class="boton chico peligro" (click)="borrarDelRegistro(j)" [attr.aria-label]="'Borrar ' + describir(j)">Borrar</button>
+        </li>
+      } @empty { <li class="suave">Todavía no hay jugadas.</li> }
+    </ol>
+    <form method="dialog"><button class="boton">Cerrar</button></form>
+  </dialog>
+
+  <dialog #planillaDialogo class="ancho">
+    @for (p of planillas(); track p.equipo) {
+      <h2>{{ p.equipo }}</h2>
+      <app-planilla [filas]="p.filas" [total]="p.total" [conMinutos]="true" />
+    }
+    <form method="dialog"><button class="boton">Cerrar</button></form>
+  </dialog>
+} @else {
+  <section class="contenedor">
+    <p>No hay ningún partido en curso.</p>
+    <a class="boton primario" routerLink="/partidos/nuevo">Empezar un partido</a>
+  </section>
+}

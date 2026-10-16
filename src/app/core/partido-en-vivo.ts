@@ -153,15 +153,26 @@ export class PartidoEnVivo {
     this.agregar(cambios, ahora);
   }
 
-  /** Borra la última jugada. Un cambio de varios jugadores se deshace entero. */
+  /** Registra una jugada con todos sus datos (tiros con ubicación, rebotes, etc.). Devuelve la jugada creada. */
+  anotar(datos: Omit<Jugada, 'id' | 'numero' | 'cuarto' | 'relojMs'>, ahora = Date.now()) {
+    return this.agregar([datos], ahora)[0];
+  }
+
+  /** Borra la última jugada. Un cambio de varios jugadores se deshace entero. Devuelve las jugadas borradas. */
   deshacer() {
     const e = this.estado();
     const ultima = e?.jugadas.at(-1);
-    if (!e || !ultima) return;
+    if (!e || !ultima) return [];
     const raiz = ultima.tipo === 'Cambio' ? (ultima.relacionadaId ?? ultima.id) : ultima.id;
-    const borrar = new Set(
-      e.jugadas.filter((j) => j.id === raiz || (j.tipo === 'Cambio' && j.relacionadaId === raiz)).map((j) => j.id),
-    );
+    const ids = e.jugadas.filter((j) => j.id === raiz || (j.tipo === 'Cambio' && j.relacionadaId === raiz)).map((j) => j.id);
+    return this.borrar(ids);
+  }
+
+  /** Borra jugadas del registro, en este dispositivo y en la API. */
+  borrar(ids: string[]) {
+    const e = this.estado();
+    if (!e) return [];
+    const borrar = new Set(ids);
     let pendientes = e.pendientes;
     for (const id of borrar) {
       // Si todavía no se mandó, alcanza con sacarla de la cola.
@@ -170,8 +181,18 @@ export class PartidoEnVivo {
         ? pendientes.filter((o) => !(o.tipo === 'alta' && o.jugada.id === id))
         : [...pendientes, { tipo: 'baja', id }];
     }
+    const borradas = e.jugadas.filter((j) => borrar.has(j.id));
     this.estado.set({ ...e, jugadas: e.jugadas.filter((j) => !borrar.has(j.id)), pendientes });
     this.enviarSiHayConexion();
+    return borradas;
+  }
+
+  /** Agrega un jugador al plantel del partido (por ejemplo, uno que llegó tarde). */
+  sumarJugador(equipoId: number, jugador: JugadorEnVivo) {
+    this.actualizar((e) => {
+      const equipo = e.local.id === equipoId ? e.local : e.visitante;
+      equipo.jugadores = [...equipo.jugadores, jugador].sort((a, b) => a.numero - b.numero);
+    });
   }
 
   /** Planilla con los minutos de los que están en cancha al día. */
@@ -280,9 +301,9 @@ export class PartidoEnVivo {
     }
   }
 
-  private agregar(jugadas: Omit<Jugada, 'id' | 'numero' | 'cuarto' | 'relojMs'>[], ahora: number) {
+  private agregar(jugadas: Omit<Jugada, 'id' | 'numero' | 'cuarto' | 'relojMs'>[], ahora: number): Jugada[] {
     const e = this.estado();
-    if (!e || jugadas.length === 0) return;
+    if (!e || jugadas.length === 0) return [];
     let numero = (e.jugadas.at(-1)?.numero ?? 0) + 1;
     const relojMs = this.restante(ahora);
     const nuevas: Jugada[] = [];
@@ -298,6 +319,7 @@ export class PartidoEnVivo {
       pendientes: [...e.pendientes, ...nuevas.map((jugada) => ({ tipo: 'alta' as const, jugada }))],
     });
     this.enviarSiHayConexion();
+    return nuevas;
   }
 
   private puntos(equipoId: number | undefined) {

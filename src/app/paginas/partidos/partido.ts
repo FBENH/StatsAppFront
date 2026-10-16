@@ -4,12 +4,15 @@ import { Router, RouterLink } from '@angular/router';
 import { BotonEliminar } from '../../compartido/boton-eliminar';
 import { FilaPlanilla, Planilla } from '../../compartido/planilla';
 import { mensajeDeError } from '../../core/api';
-import { porcentaje, tirosDeCampo } from '../../core/estadisticas';
+import { formatearReloj, porcentaje, tirosDeCampo } from '../../core/estadisticas';
 import { Contadores } from '../../core/modelos';
+import { Cancha, PuntoTiro } from '../../compartido/cancha';
+import { describir, nombreCorto } from '../../core/relato';
+import { Jugada } from '../../core/registro';
 import { Partidos } from '../../core/servicios';
 
 @Component({
-  imports: [DatePipe, Planilla, BotonEliminar, RouterLink],
+  imports: [DatePipe, Planilla, BotonEliminar, RouterLink, Cancha],
   template: `
     <section class="contenedor">
       @if (partido.value(); as p) {
@@ -44,10 +47,43 @@ import { Partidos } from '../../core/servicios';
           </table>
         </div>
 
+        @if (hayTiros()) {
+          <h2>Mapa de tiros</h2>
+          <div class="mapas">
+            @for (m of mapas(); track m.equipoId) {
+              <figure class="tarjeta">
+                <figcaption>
+                  <strong>{{ m.nombre }}</strong>
+                  <span class="suave">{{ m.aciertos }}/{{ m.tiros.length }} con ubicación</span>
+                </figcaption>
+                <app-cancha [tiros]="m.tiros" [etiqueta]="'Mapa de tiros de ' + m.nombre" />
+              </figure>
+            }
+          </div>
+          <label class="campo filtro">
+            <span>Ver solo a</span>
+            <select (change)="filtro.set(+$any($event.target).value || null)">
+              <option value="">Todos</option>
+              @for (j of jugadoresOrdenados(); track j.id) { <option [value]="j.id">{{ nombre(j) }}</option> }
+            </select>
+          </label>
+        }
+
         <h2>{{ p.local }}</h2>
         <app-planilla [conMinutos]="true" [filas]="filas(p.equipoLocalId)" [total]="local()" />
         <h2>{{ p.visitante }}</h2>
         <app-planilla [conMinutos]="true" [filas]="filas(p.equipoVisitanteId)" [total]="visitante()" />
+
+        @if (relato().length > 0) {
+          <details class="relato">
+            <summary>Jugada a jugada ({{ relato().length }})</summary>
+            <ol>
+              @for (r of relato(); track r.id) {
+                <li><span class="suave">{{ r.momento }}</span> {{ r.texto }} <span class="suave">{{ r.marcador }}</span></li>
+              }
+            </ol>
+          </details>
+        }
 
         <div class="fila eliminar">
           <app-boton-eliminar pregunta="¿Eliminar el partido?" (confirmado)="eliminar()" />
@@ -72,6 +108,13 @@ import { Partidos } from '../../core/servicios';
     .centro { text-align: center; }
     .comparacion td, .comparacion th { text-align: center !important; }
     .eliminar { margin-top: 2rem; }
+    .mapas { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    figure { margin: 0; }
+    figcaption { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+    .filtro { max-width: 16rem; margin-top: 0.75rem; }
+    .relato { margin-top: 1.75rem; }
+    .relato summary { cursor: pointer; font-weight: 600; }
+    .relato ol { list-style: none; padding: 0; display: grid; gap: 0.25rem; font-size: 0.9rem; }
   `,
 })
 export default class Partido {
@@ -81,6 +124,72 @@ export default class Partido {
   readonly id = input.required<string>();
   protected readonly error = signal<string | null>(null);
   protected readonly partido = resource({ params: () => +this.id(), loader: ({ params }) => this.servicio.obtener(params) });
+
+  private readonly jugadas = resource({
+    params: () => +this.id(),
+    loader: ({ params }) => this.servicio.jugadas(params),
+  });
+  protected readonly filtro = signal<number | null>(null);
+
+  protected readonly jugadoresOrdenados = computed(() =>
+    [...(this.partido.value()?.jugadores ?? [])].sort((a, b) => a.numero - b.numero),
+  );
+  protected readonly hayTiros = computed(() => (this.jugadas.value() ?? []).some((j) => j.tipo === 'Tiro' && j.x != null));
+
+  protected readonly mapas = computed(() => {
+    const p = this.partido.value();
+    if (!p) return [];
+    const filtro = this.filtro();
+    return [
+      { equipoId: p.equipoLocalId, nombre: p.local },
+      { equipoId: p.equipoVisitanteId, nombre: p.visitante },
+    ].map((equipo) => {
+      const tiros: PuntoTiro[] = (this.jugadas.value() ?? [])
+        .filter((j) => j.tipo === 'Tiro' && j.x != null && j.y != null && j.equipoId === equipo.equipoId)
+        .filter((j) => filtro === null || j.jugadorId === filtro)
+        .map((j) => ({ x: j.x!, y: j.y!, acierto: !!j.acierto, titulo: this.texto(j) }));
+      return { ...equipo, tiros, aciertos: tiros.filter((t) => t.acierto).length };
+    });
+  });
+
+  /** Cada jugada con el marcador como quedó después. */
+  protected readonly relato = computed(() => {
+    const p = this.partido.value();
+    if (!p) return [];
+    let local = 0;
+    let visitante = 0;
+    return (this.jugadas.value() ?? [])
+      .filter((j) => j.tipo !== 'Cambio')
+      .map((j) => {
+        const puntos = (j.tipo === 'Tiro' || j.tipo === 'Libre') && j.acierto ? (j.tipo === 'Libre' ? 1 : (j.valor ?? 2)) : 0;
+        if (j.equipoId === p.equipoLocalId) local += puntos;
+        else visitante += puntos;
+        const cuarto = j.cuarto <= 4 ? `${j.cuarto}C` : `P${j.cuarto - 4}`;
+        return {
+          id: j.id,
+          momento: j.relojMs == null ? cuarto : `${cuarto} ${formatearReloj(j.relojMs)}`,
+          texto: this.texto(j),
+          marcador: puntos ? `${local}-${visitante}` : '',
+        };
+      })
+      .reverse();
+  });
+
+  protected nombre(j: { numero: number; nombre: string }) {
+    return nombreCorto(j);
+  }
+
+  private texto(j: Jugada) {
+    const p = this.partido.value()!;
+    return describir(
+      j,
+      (id) => {
+        const jugador = p.jugadores.find((x) => x.id === id);
+        return jugador ? nombreCorto(jugador) : '#?';
+      },
+      (id) => (id === p.equipoLocalId ? p.local : p.visitante),
+    );
+  }
 
   protected readonly local = computed(() => this.estadisticaDe(this.partido.value()?.equipoLocalId));
   protected readonly visitante = computed(() => this.estadisticaDe(this.partido.value()?.equipoVisitanteId));
@@ -109,7 +218,7 @@ export default class Partido {
       .map((j) => ({ j, s: j.estadisticasJugador[0] }))
       .filter(({ s }) => s?.equipoId === equipoId)
       .sort((a, b) => a.j.numero - b.j.numero)
-      .map(({ j, s }) => ({ ...s, titulo: `#${j.numero} ${j.nombre}`, enlace: ['/jugadores', j.id] }));
+      .map(({ j, s }) => ({ ...s, titulo: nombreCorto(j), enlace: ['/jugadores', j.id] }));
   }
 
   protected async eliminar() {
