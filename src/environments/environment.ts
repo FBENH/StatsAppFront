@@ -1,4 +1,4 @@
-// URL de la API para el build de producción. Se completa al desplegar.
+// URL de la API para el build de producción.
 export const environment = {
-  apiUrl: 'http://localhost:5049',
+  apiUrl: 'https://statsappapi.azurewebsites.net',
 };
