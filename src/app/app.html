@@ -1,0 +1,24 @@
+<header class="barra">
+  <div class="barra-interior">
+    <a class="marca" [routerLink]="auth.logueado() ? '/inicio' : '/'">StatsApp</a>
+    @if (auth.logueado()) {
+      <button class="boton chico menu" type="button" (click)="menuAbierto.set(!menuAbierto())"
+        [attr.aria-expanded]="menuAbierto()" aria-controls="navegacion">Menú</button>
+      <nav id="navegacion" [class.abierto]="menuAbierto()" (click)="menuAbierto.set(false)">
+        <a routerLink="/partidos" routerLinkActive="activo">Partidos</a>
+        <a routerLink="/equipos" routerLinkActive="activo">Equipos</a>
+        <a routerLink="/jugadores" routerLinkActive="activo">Jugadores</a>
+        <a class="boton primario chico" routerLink="/partidos/nuevo">Nuevo partido</a>
+        <button class="boton chico" type="button" (click)="auth.salir()">Salir ({{ auth.usuario() }})</button>
+      </nav>
+    } @else {
+      <nav class="siempre">
+        <a routerLink="/ingresar">Ingresar</a>
+        <a class="boton primario chico" routerLink="/registro">Crear cuenta</a>
+      </nav>
+    }
+  </div>
+</header>
+<main>
+  <router-outlet />
+</main>

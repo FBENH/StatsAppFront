@@ -1,0 +1,12 @@
+.barra { background: var(--superficie); border-bottom: 1px solid var(--borde); position: sticky; top: 0; z-index: 10; }
+.barra-interior { max-width: 1040px; margin: 0 auto; padding: 0.5rem 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.marca { font-weight: 800; font-size: 1.15rem; color: var(--texto); text-decoration: none; margin-right: auto; }
+nav { display: flex; align-items: center; gap: 1rem; }
+nav a:not(.boton) { color: var(--texto-suave); text-decoration: none; font-weight: 600; }
+nav a.activo, nav a:not(.boton):hover { color: var(--texto); }
+.menu { display: none; }
+@media (max-width: 720px) {
+  .menu { display: inline-flex; }
+  nav:not(.siempre) { display: none; width: 100%; flex-direction: column; align-items: stretch; padding-bottom: 0.5rem; }
+  nav.abierto { display: flex; }
+}
