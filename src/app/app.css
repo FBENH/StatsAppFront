@@ -10,3 +10,13 @@ nav a.activo, nav a:not(.boton):hover { color: var(--texto); }
   nav:not(.siempre) { display: none; width: 100%; flex-direction: column; align-items: stretch; padding-bottom: 0.5rem; }
   nav.abierto { display: flex; }
 }
+
+.despertando {
+  margin: 0;
+  padding: 0.6rem 1rem;
+  text-align: center;
+  background: var(--superficie-2);
+  border-bottom: 1px solid var(--borde);
+  color: var(--texto);
+  font-size: 0.95rem;
+}

@@ -5,6 +5,7 @@ import { ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/auth';
+import { baseDormidaInterceptor } from './core/base-dormida';
 
 // Fechas y números en español ("lun 12/10", "octubre").
 registerLocaleData(localeEs);
@@ -13,7 +14,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withComponentInputBinding()),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor, baseDormidaInterceptor])),
     { provide: LOCALE_ID, useValue: 'es' },
   ],
 };
