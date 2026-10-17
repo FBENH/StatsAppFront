@@ -22,6 +22,12 @@
   </div>
 </header>
 }
+@if (base.despertando()) {
+<p class="despertando" role="status">
+  Despertando la base de datos. Está en un plan gratis que se pausa cuando nadie la usa, así que la primera carga
+  puede tardar hasta un minuto.
+</p>
+}
 <main [class.widget]="esWidget()">
   <router-outlet />
 </main>
